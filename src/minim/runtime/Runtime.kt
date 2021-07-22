@@ -8,8 +8,8 @@ import java.util.*
 import kotlin.collections.ArrayDeque
 import kotlin.math.min
 
-class Runtime(val args:String, private val stmts: List<Stmt>) : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
-    private val memory = MArray(0xFFFF)
+class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
+    private val memory = MArray(config.size)
     
     private val startDefault = 0F
     private val endDefault = memory.lastIndex.toFloat()

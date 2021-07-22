@@ -14,7 +14,9 @@ object Library : MutableMap<String, Library.Command> by mutableMapOf() {
         
         this["time"] = Command { _, _ -> floatArrayOf(System.currentTimeMillis() / 1000F) }
         
-        this["args"] = Command { runtime, _ -> runtime.args.map { it.code.toFloat() }.toFloatArray() }
+        this["args"] = Command { runtime, _ -> runtime.config.args.map { it.code.toFloat() }.toFloatArray() }
+        
+        this["size"] = Command { runtime, _ -> floatArrayOf(runtime.config.size.toFloat()) }
         
         this["cat"] = Command(3) { _, args ->
             val (a, b, c) = args
@@ -88,7 +90,7 @@ object Library : MutableMap<String, Library.Command> by mutableMapOf() {
             floatArrayOf(cosh(n))
         }
         
-        this["e"] = Command {_,_-> floatArrayOf(Math.E.toFloat()) }
+        this["e"] = Command { _, _ -> floatArrayOf(Math.E.toFloat()) }
         
         this["exp"] = Command(1) { _, args ->
             val (n) = args
@@ -174,7 +176,7 @@ object Library : MutableMap<String, Library.Command> by mutableMapOf() {
             floatArrayOf(n.nextUp())
         }
         
-        this["pi"] = Command {_,_-> floatArrayOf(Math.PI.toFloat()) }
+        this["pi"] = Command { _, _ -> floatArrayOf(Math.PI.toFloat()) }
         
         this["pow"] = Command(2) { _, args ->
             val (b, e) = args
@@ -182,7 +184,7 @@ object Library : MutableMap<String, Library.Command> by mutableMapOf() {
             floatArrayOf(b.pow(e))
         }
         
-        this["random"] = Command {_,_-> floatArrayOf(Math.random().toFloat()) }
+        this["random"] = Command { _, _ -> floatArrayOf(Math.random().toFloat()) }
         
         this["round"] = Command(1) { _, args ->
             val (n) = args

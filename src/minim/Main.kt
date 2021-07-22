@@ -1,31 +1,40 @@
 package minim
 
+import minim.runtime.Config
 import minim.util.Source
 import java.io.File
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTimedValue
 
 @ExperimentalTime
-fun main(args: Array<String>) {
-    var subArgs = ""
+fun main(mainArgs: Array<String>) {
+    var args = ""
+    var size = 0xFFFF
     var file = ""
     
     var i = 0
     
-    while (i < args.size) {
-        val arg = args[i]
+    while (i < mainArgs.size) {
+        val arg = mainArgs[i]
         
         if (arg[0] == '-') when (arg.substring(1)) {
-            "a" -> subArgs = args[++i]
+            "a" -> args = mainArgs[++i]
             
-            "f" -> file = args[++i]
+            "f" -> file = mainArgs[++i]
+            
+            "s" -> size = mainArgs[++i].toIntOrNull() ?: error("Memory size must be an integer!")
         }
         
         i++
     }
     
+    val config = Config(args, size)
+    
     if (file.isNotEmpty()) {
-        file(subArgs, file)
+        file(config, file)
+    }
+    else {
+        repl()
     }
 }
 
@@ -40,13 +49,13 @@ private fun repl() {
         
         val source = Source("<REPL>", text)
         
-        exec("", source)
+        exec(Config(), source)
     }
     while (true)
 }
 
 @ExperimentalTime
-private fun file(args: String, path: String) {
+private fun file(config: Config, path: String) {
     val file = File(path)
     
     val name = file.nameWithoutExtension
@@ -54,14 +63,14 @@ private fun file(args: String, path: String) {
     
     val source = Source(name, text)
     
-    exec(args, source)
+    exec(config, source)
 }
 
 @ExperimentalTime
-private fun exec(args: String, source: Source) {
-    val script = source.compile(args)
+private fun exec(config: Config, source: Source) {
+    val runtime = source.compile(config)
     
-    val (value, duration) = measureTimedValue { script.run() }
+    val (value, duration) = measureTimedValue { runtime.run() }
     
     if (value == Unit) {
         println("Done (${duration.inWholeMilliseconds / 1E3} s)")
