@@ -1,0 +1,16 @@
+; ASCII Extended      \
+  Christian Alexander \
+  07/16/2021
+
+; Prints the extended ASCII table in a 16x16 grid
+  
+_> T.
+    $< [0]++.
+    
+    _^ [0] % 16.
+        $< '\n'.
+        
+    _< ?([0] - 256).
+_> F.
+
+$< '\n'.

@@ -1,0 +1,60 @@
+; 99 Bottles          \
+  Christian Alexander \
+  07/12/2021
+
+[0] = 99.
+
+_>'['.
+    #< [0].
+    
+    [1] = 2.
+    [2:] = ([0] - 1) ? " bottles of beer on the wall,\n" : " bottle of beer on the wall,\n".
+    
+    _>'A'.
+        $< [[1]++].
+        _< [[1]] ? 'A' : 'a'.
+    _>'a'.
+    
+    #< [0].
+    
+    [1] = 2.
+    [2:] = ([0] - 1) ? " bottles of beer.\n" : " bottle of beer.\n".
+    
+    _>'B'.
+        $< [[1]++].
+        _< [[1]] ? 'B' : 'b'.
+    _>'b'.
+    
+    _< [0] ? '+' : ']'.
+    _>'+'.
+    
+    [1] = 2.
+    [2:] = "Take one down, pass it around,\n".
+    
+    _>'C'.
+        $< [[1]++].
+        _< [[1]] ? 'C' : 'c'.
+    _>'c'.
+    
+    [0]++.
+    
+    #< [0].
+    
+    [1] = 2.
+    [2:] = ([0] - 1) ? " bottles of beer on the wall,\n\n" : " bottle of beer on the wall,\n\n".
+    
+    _>'D'.
+        $< [[1]++].
+        _< [[1]] ? 'D' : 'd'.
+    _>'d'.
+    
+    _<'['.
+_>']'.
+
+[1] = 2.
+[2:] = "Go to the store, buy some more,\n99 bottles of beer on the wall.\n".
+
+_>'E'.
+    $< [[1]++].
+    _< [[1]] ? 'E' : 'e'.
+_>'e'.
