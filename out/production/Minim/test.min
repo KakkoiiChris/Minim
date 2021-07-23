@@ -1,43 +1,47 @@
-; 99 Bottles w/ Gosub and Return \
-  Christian Alexander            \
-  07/12/2021
+; FizzBuzz            \
+  Christian Alexander \
+  07/23/2021
+  
+[0] = 1.
 
-[0] = 99.
+_> 1.
+    _^ !([0] % 3 && [0] % 5).
+        _< '#'.
+
+    _^ !([0] % 3).
+        _< 'F'.
+    
+    [2 :] = "Fizz".
+    _+ 'P'.
+    
+    _> 'F'.
+    
+    _^ !([0] % 5).
+        _< 'B'.
+    
+    [2 :] = "Buzz".
+    _+ 'P'.
+    
+    _> 'B'.
+    
+    _< ' '.
+    
+    _> '#'.
+        #< [0].
+    
+    _> ' '.
+    
+    $< ' '.
+    
+    _< ?([0]++ - 100).
+_> 0.
 
 _< '.'.
     _> 'P'.
         [1] = 2.
-    
-        _> 1.
+        _> 3.
             $< [[1]++].
-            _< ?[[1]].
-        _> 0.
+            _< ?[[1]] + 2.
+        _> 2.
     _- 0.
 _> '.'.
-
-_>'['.
-    #< [0].
-    [2:] = ([0] - 1) ? " bottles of beer on the wall,\n" : " bottle of beer on the wall,\n".
-    _+ 'P'.
-    
-    #< [0].
-    [2:] = ([0] - 1) ? " bottles of beer.\n" : " bottle of beer.\n".
-    _+ 'P'.
-    
-    _< [0] ? '+' : ']'.
-    _>'+'.
-    
-    [2:] = "Take one down, pass it around,\n".
-    _+ 'P'.
-    
-    [0]--.
-    
-    #< [0].
-    [2:] = ([0] - 1) ? " bottles of beer on the wall,\n\n" : " bottle of beer on the wall,\n\n".
-    _+ 'P'.
-    
-    _<'['.
-_>']'.
-
-[2:] = "Go to the store, buy some more,\n99 bottles of beer on the wall.\n".
-_+ 'P'.
