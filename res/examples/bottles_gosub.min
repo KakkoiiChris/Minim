@@ -1,17 +1,17 @@
-; 99 Bottles (w/ Gosub and Return \
-  Christian Alexander             \
+; 99 Bottles w/ Gosub and Return \
+  Christian Alexander            \
   07/12/2021
 
 [0] = 99.
 
 _< '.'.
-_> 'P'.
-    [1] = 2.
-
-    _> 1.
-        $< [[1]++].
-        _< ?[[1]].
-    _> 0.
+    _> 'P'.
+        [1] = 2.
+    
+        _> 1.
+            $< [[1]++].
+            _< ?[[1]].
+        _> 0.
     _- 0.
 _> '.'.
 
@@ -30,7 +30,7 @@ _>'['.
     [2:] = "Take one down, pass it around,\n".
     _+ 'P'.
     
-    [0]++.
+    [0]--.
     
     #< [0].
     [2:] = ([0] - 1) ? " bottles of beer on the wall,\n\n" : " bottle of beer on the wall,\n\n".
