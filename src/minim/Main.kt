@@ -40,6 +40,23 @@ fun main(mainArgs: Array<String>) {
 
 @ExperimentalTime
 private fun repl() {
+    println("""
+        ##.      .##'    .##
+        ####.  .##'    .##'
+        ## '####'    .##'
+        ##   ''    .##'    .
+        ##       .##'    .##
+        ##     .##'    .####
+             .##'    .##' ##
+           .##'    .##'   ##
+         .##'    .##'     ##
+        ##'    .##'       ##
+        --------------------
+         Minim  Programming
+          Language V 5.1.5
+          
+          """.trimIndent())
+    
     do {
         print("minim> ")
         

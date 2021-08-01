@@ -3,7 +3,7 @@ package minim.util
 import minim.lexer.Location
 import minim.lexer.Token
 
-class MinimError(stage: Stage, msg: String, loc: Location) : Throwable("ERROR @ ${stage.name}: $msg @ $loc"){
+class MinimError(stage: Stage, msg: String, loc: Location) : Throwable("ERROR @ ${stage.name}: $msg @ $loc") {
     enum class Stage {
         GENERAL,
         LEXER,
@@ -33,8 +33,14 @@ fun invalidNumberError(literal: String, loc: Location): Nothing =
 fun parserError(msg: String, loc: Location): Nothing =
     throw MinimError(MinimError.Stage.PARSER, msg, loc)
 
+fun noRelativeRangeCountError(loc: Location): Nothing =
+    parserError("Relative range count cannot be omitted!", loc)
+
 fun invalidArrayElementError(loc: Location): Nothing =
     parserError("Array elements must be single values!", loc)
+
+fun invalidStatementHeaderError(header: String, loc: Location): Nothing =
+    parserError("Statement header '$header' is invalid!", loc)
 
 fun invalidTerminalError(invalid: Token.Type, loc: Location): Nothing =
     parserError("Terminal beginning with '$invalid' is invalid!", loc)
@@ -48,8 +54,14 @@ fun runtimeError(msg: String, loc: Location): Nothing =
 fun invalidLeftOperandError(operand: Any, op: Token.Type, loc: Location): Nothing =
     runtimeError("Left operand '$operand' for binary operator '$op' is invalid!", loc)
 
-fun invalidMemoryIndexError(loc: Location):Nothing=
+fun invalidMemoryIndexError(loc: Location): Nothing =
     runtimeError("Memory index must be a number!", loc)
+
+fun invalidNumericalInputError(input: String, loc: Location): Nothing =
+    runtimeError("Input '$input' does not conform to a number!", loc)
+
+fun invalidRangeExprError(name:String, loc: Location):Nothing=
+    runtimeError("Range $name expression must yield a number!", loc)
 
 fun invalidRightOperandError(operand: Any, op: Token.Type, loc: Location): Nothing =
     runtimeError("Right operand '$operand' for binary operator '$op' is invalid!", loc)
@@ -60,5 +72,11 @@ fun invalidTestExprError(loc: Location): Nothing =
 fun invalidUnaryOperandError(operand: Any, op: Token.Type, loc: Location): Nothing =
     runtimeError("Operand '$operand' for unary operator '$op' is invalid!", loc)
 
-fun undefinedLabelError(id: Int, loc: Location): Nothing =
-    runtimeError("Label $id/'${id.toChar()}' is undefined!", loc)
+fun invalidStatementArgumentError(loc: Location): Nothing =
+    runtimeError("Statement argument must be a single number!", loc)
+
+fun undefinedCommandError(name: String, loc: Location): Nothing =
+    runtimeError("System command '$name' is not defined!", loc)
+
+fun undefinedLabelError(id: Float, loc: Location): Nothing =
+    runtimeError("Label $id/'${id.toInt().toChar()}' is undefined!", loc)

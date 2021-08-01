@@ -15,7 +15,7 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
     private val endDefault = memory.lastIndex.toFloat()
     private val stepDefault = 1F
     
-    private val labels = mutableMapOf<Int, Int>()
+    private val labels = mutableMapOf<Float, Int>()
     
     private val callStack = Stack<Int>()
     
@@ -30,8 +30,6 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
         while (pos < stmts.size) {
             visit(stmts[pos++])
         }
-        
-        memory[0..0xF].printDebug()
         
         return memory.first().value
     }
@@ -63,28 +61,28 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
                 
                 else       -> invalidUnaryOperandError(e, expr.op, expr.loc)
             }
-    
-            Token.Type.PRI->when (val e = visit(expr.expr)) {
+            
+            Token.Type.PRI -> when (val e = visit(expr.expr)) {
                 is MNumber -> {
                     e.value++
-            
+                    
                     e
                 }
-        
+                
                 else       -> invalidUnaryOperandError(e, expr.op, expr.loc)
             }
-    
-            Token.Type.PRD->when (val e = visit(expr.expr)) {
+            
+            Token.Type.PRD -> when (val e = visit(expr.expr)) {
                 is MNumber -> {
                     e.value--
-            
+                    
                     e
                 }
-        
+                
                 else       -> invalidUnaryOperandError(e, expr.op, expr.loc)
             }
             
-            Token.Type.POI->when (val e = visit(expr.expr)) {
+            Token.Type.POI -> when (val e = visit(expr.expr)) {
                 is MNumber -> {
                     val before = MNumber(e.value)
                     
@@ -92,19 +90,19 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
                     
                     before
                 }
-    
+                
                 else       -> invalidUnaryOperandError(e, expr.op, expr.loc)
             }
             
-            Token.Type.POD->when (val e = visit(expr.expr)) {
+            Token.Type.POD -> when (val e = visit(expr.expr)) {
                 is MNumber -> {
                     val before = MNumber(e.value)
-            
+                    
                     e.value--
-            
+                    
                     before
                 }
-        
+                
                 else       -> invalidUnaryOperandError(e, expr.op, expr.loc)
             }
             
@@ -382,51 +380,53 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
     override fun visitNoneStmt(stmt: Stmt.None) = Unit
     
     override fun visitNumberInStmt(stmt: Stmt.NumberIn) {
-        val number = visit(stmt.expr) as? MNumber ?: TODO()
+        val number = visit(stmt.expr) as? MNumber ?: invalidStatementArgumentError(stmt.expr.loc)
         
-        number.value = readLine()?.toFloatOrNull() ?: TODO()
+        val input = readLine()?.takeIf { it.isNotEmpty() } ?: ""
+        
+        number.value = input.toFloatOrNull() ?: invalidNumericalInputError(input, stmt.loc)
     }
     
     override fun visitNumberOutStmt(stmt: Stmt.NumberOut) {
-        val number = visit(stmt.expr) as? MNumber ?: TODO()
+        val number = visit(stmt.expr) as? MNumber ?: invalidStatementArgumentError(stmt.expr.loc)
         
         print(number)
     }
     
     override fun visitTextInStmt(stmt: Stmt.TextIn) {
         if (inputQueue.isEmpty()) {
-            val input = readLine() ?: TODO()
+            val input = readLine()?.takeIf { it.isNotEmpty() } ?: return
             
-            inputQueue.addAll(input.map { it.code.toFloat() }.plus(0F))
+            inputQueue.addAll(input.map { it.code.toFloat() } + 0F)
         }
         
-        val number = visit(stmt.expr) as? MNumber ?: TODO()
+        val number = visit(stmt.expr) as? MNumber ?: invalidStatementArgumentError(stmt.expr.loc)
         
         number.value = inputQueue.removeFirst()
     }
     
     override fun visitTextOutStmt(stmt: Stmt.TextOut) {
-        val number = visit(stmt.expr) as? MNumber ?: TODO()
+        val number = visit(stmt.expr) as? MNumber ?: invalidStatementArgumentError(stmt.expr.loc)
         
         print(number.toChar())
     }
     
     override fun visitLabelStmt(stmt: Stmt.Label) {
-        val id = (visit(stmt.id) as? MNumber ?: TODO("LABEL")).value.toInt()
+        val id = (visit(stmt.id) as? MNumber ?: invalidStatementArgumentError(stmt.id.loc)).value
         
         labels[id] = pos
     }
     
     override fun visitGotoStmt(stmt: Stmt.Goto) {
-        val id = (visit(stmt.id) as? MNumber ?: TODO("GOTO")).value.toInt()
+        val id = (visit(stmt.id) as? MNumber ?: invalidStatementArgumentError(stmt.id.loc)).value
         
         pos = labels[id] ?: findLabel(id) ?: undefinedLabelError(id, stmt.loc)
     }
     
-    private fun findLabel(id: Int): Int? {
+    private fun findLabel(id: Float): Int? {
         for ((i, stmt) in stmts.withIndex()) {
             if (stmt is Stmt.Label) {
-                val otherID = (visit(stmt.id) as? MNumber ?: TODO("FIND LABEL")).value.toInt()
+                val otherID = (visit(stmt.id) as? MNumber ?: invalidStatementArgumentError(stmt.id.loc)).value
                 
                 if (id == otherID) {
                     labels[id] = i
@@ -440,7 +440,8 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
     }
     
     override fun visitJumpStmt(stmt: Stmt.Jump) {
-        val condition = (visit(stmt.condition) as? MNumber ?: TODO()).value.toBoolean()
+        val condition =
+            (visit(stmt.condition) as? MNumber ?: invalidStatementArgumentError(stmt.condition.loc)).value.toBoolean()
         
         if (condition) {
             pos++
@@ -448,8 +449,8 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
     }
     
     override fun visitGosubStmt(stmt: Stmt.Gosub) {
-        val id = (visit(stmt.id) as? MNumber ?: TODO("GOTO")).value.toInt()
-    
+        val id = (visit(stmt.id) as? MNumber ?: invalidStatementArgumentError(stmt.id.loc)).value
+        
         callStack.push(pos)
         
         pos = labels[id] ?: findLabel(id) ?: undefinedLabelError(id, stmt.loc)
@@ -466,7 +467,7 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
     }
     
     override fun visitSystemArgStmt(stmt: Stmt.SystemArg) {
-        val expr = visit(stmt.expr) as? MNumber ?: TODO()
+        val expr = visit(stmt.expr) as? MNumber ?: invalidStatementArgumentError(stmt.expr.loc)
         
         systemInputQueue.add(expr.value)
     }
@@ -484,7 +485,7 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
             
             val commandName = memory[start until end].ascii
             
-            val command = Library[commandName] ?: TODO("NO COMMAND '$commandName'")
+            val command = Library[commandName] ?: undefinedCommandError(commandName, stmt.loc)
             
             val args = mutableListOf<Float>()
             
@@ -498,7 +499,7 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
         }
         
         if (systemOutputQueue.isNotEmpty()) {
-            val number = visit(stmt.expr) as? MNumber ?: TODO()
+            val number = visit(stmt.expr) as? MNumber ?: invalidStatementArgumentError(stmt.expr.loc)
             
             number.value = systemOutputQueue.removeFirst()
         }
@@ -516,17 +517,37 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
     }
     
     override fun visitFixedRangeAssignStmt(stmt: Stmt.FixedRangeAssign) {
-        val start = ((visit(stmt.range.start) as? MNumber)?.value ?: startDefault).toInt()
-        val end   = ((visit(stmt.range.end)   as? MNumber)?.value ?: endDefault).toInt()
-        val step  = ((visit(stmt.range.step)  as? MNumber)?.value ?: stepDefault).toInt()
+        val start = when (val expr = visit(stmt.range.start)) {
+            is MNumber -> expr.value
+            
+            is Unit    -> startDefault
+            
+            else       -> invalidRangeExprError("start", stmt.range.start.loc)
+        }.toInt()
+        
+        val end = when (val expr = visit(stmt.range.end)) {
+            is MNumber -> expr.value
+            
+            is Unit    -> endDefault
+            
+            else       -> invalidRangeExprError("end", stmt.range.end.loc)
+        }.toInt()
+        
+        val step = when (val expr = visit(stmt.range.step)) {
+            is MNumber -> expr.value
+            
+            is Unit    -> stepDefault
+            
+            else       -> invalidRangeExprError("step", stmt.range.step.loc)
+        }.toInt()
         
         when (val expr = visit(stmt.expr)) {
             is MNumber -> {
                 var memoryIndex = start
-    
+                
                 while (memoryIndex <= end) {
                     memory[memoryIndex].value = expr.value
-        
+                    
                     memoryIndex += step
                 }
             }
@@ -548,17 +569,35 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
     }
     
     override fun visitRelativeRangeAssignStmt(stmt: Stmt.RelativeRangeAssign) {
-        val start = ((visit(stmt.range.start) as? MNumber)?.value ?: startDefault).toInt()
-        val count   = ((visit(stmt.range.count)   as? MNumber)?.value ?: TODO("NO COUNT IN REL RNG ASSIGN")).toInt()
-        val step  = ((visit(stmt.range.step)  as? MNumber)?.value ?: stepDefault).toInt()
+        val start = when (val expr = visit(stmt.range.start)) {
+            is MNumber -> expr.value
+            
+            is Unit    -> startDefault
+            
+            else       -> invalidRangeExprError("start", stmt.range.start.loc)
+        }.toInt()
+        
+        val count = when (val expr = visit(stmt.range.count)) {
+            is MNumber -> expr.value
+            
+            else       -> invalidRangeExprError("count", stmt.range.count.loc)
+        }.toInt()
+        
+        val step = when (val expr = visit(stmt.range.step)) {
+            is MNumber -> expr.value
+            
+            is Unit    -> stepDefault
+            
+            else       -> invalidRangeExprError("step", stmt.range.step.loc)
+        }.toInt()
         
         when (val expr = visit(stmt.expr)) {
             is MNumber -> {
                 var memoryIndex = start
-    
+                
                 while (memoryIndex < start + count) {
                     memory[memoryIndex].value = expr.value
-        
+                    
                     memoryIndex += step
                 }
             }

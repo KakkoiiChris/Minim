@@ -1,9 +1,7 @@
 package minim.parser
 
 import minim.lexer.Token
-import minim.util.invalidArrayElementError
-import minim.util.invalidTerminalError
-import minim.util.invalidTypeError
+import minim.util.*
 
 class Parser(private val tokens: List<Token>) {
     private var pos = 0
@@ -86,7 +84,7 @@ class Parser(private val tokens: List<Token>) {
             
             skip(Token.Type.GRT) -> Stmt.NumberIn(loc, expr())
             
-            else                 -> TODO()
+            else                 -> invalidStatementHeaderError("#${peek().type}", loc)
         }
     }
     
@@ -100,7 +98,7 @@ class Parser(private val tokens: List<Token>) {
             
             skip(Token.Type.GRT) -> Stmt.TextIn(loc, expr())
             
-            else                 -> TODO()
+            else                 -> invalidStatementHeaderError("\$${peek().type}", loc)
         }
     }
     
@@ -120,7 +118,7 @@ class Parser(private val tokens: List<Token>) {
             
             skip(Token.Type.SUB) -> Stmt.Return(loc, expr())
             
-            else                 -> TODO()
+            else                 -> invalidStatementHeaderError("_${peek().type}", loc)
         }
     }
     
@@ -134,7 +132,7 @@ class Parser(private val tokens: List<Token>) {
             
             skip(Token.Type.GRT) -> Stmt.SystemCall(loc, expr())
             
-            else                 -> TODO()
+            else                 -> invalidStatementHeaderError("\\${peek().type}", loc)
         }
     }
     
@@ -339,7 +337,7 @@ class Parser(private val tokens: List<Token>) {
                 
                 Token.Type.PRD -> Expr.Unary(op.loc, Token.Type.POD, expr)
                 
-                else           -> TODO("INVALID POSTFIX OPERATOR")
+                else           -> error("BROKEN POSTFIX")
             }
         }
         
@@ -407,7 +405,7 @@ class Parser(private val tokens: List<Token>) {
                 Expr.FixedRange(loc, a, Expr.None, Expr.None)
             }
             else {
-                TODO("RELATIVE RANGE COUNT NO DEFAULT")
+                noRelativeRangeCountError(here())
             }
         }
         

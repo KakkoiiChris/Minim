@@ -4,6 +4,33 @@
 
 [0] = 99.
 
+_> '['.
+    #< [0].
+    [2 :] = ([0] - 1) ? " bottles of beer on the wall,\n" : " bottle of beer on the wall,\n".
+    _+ 'P'.
+    
+    #< [0].
+    [2 :] = ([0] - 1) ? " bottles of beer.\n" : " bottle of beer.\n".
+    _+ 'P'.
+    
+    _< [0] ? '+' : ']'.
+    _> '+'.
+    
+    [2 :] = "Take one down, pass it around,\n".
+    _+ 'P'.
+    
+    [0]--.
+    
+    #< [0].
+    [2 :] = ([0] - 1) ? " bottles of beer on the wall,\n\n" : " bottle of beer on the wall,\n\n".
+    _+ 'P'.
+    
+    _< '['.
+_> ']'.
+
+[2 :] = "Go to the store, buy some more,\n99 bottles of beer on the wall.\n".
+_+ 'P'.
+
 _< '.'.
     _> 'P'.
         [1] = 2.
@@ -14,30 +41,3 @@ _< '.'.
         _> 0.
     _- 0.
 _> '.'.
-
-_>'['.
-    #< [0].
-    [2:] = ([0] - 1) ? " bottles of beer on the wall,\n" : " bottle of beer on the wall,\n".
-    _+ 'P'.
-    
-    #< [0].
-    [2:] = ([0] - 1) ? " bottles of beer.\n" : " bottle of beer.\n".
-    _+ 'P'.
-    
-    _< [0] ? '+' : ']'.
-    _>'+'.
-    
-    [2:] = "Take one down, pass it around,\n".
-    _+ 'P'.
-    
-    [0]--.
-    
-    #< [0].
-    [2:] = ([0] - 1) ? " bottles of beer on the wall,\n\n" : " bottle of beer on the wall,\n\n".
-    _+ 'P'.
-    
-    _<'['.
-_>']'.
-
-[2:] = "Go to the store, buy some more,\n99 bottles of beer on the wall.\n".
-_+ 'P'.
