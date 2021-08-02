@@ -82,7 +82,7 @@ class Lexer(private val source: Source) {
         predicate(peek(1))
     
     private fun isEOF() =
-        match(NUL)
+        match('\u0000')
     
     private fun step(count: Int = 1) {
         repeat(count) {
@@ -395,6 +395,10 @@ class Lexer(private val source: Source) {
             skip('_')  -> Token.Type.LBL
             
             skip('\\') -> Token.Type.SYS
+            
+            skip('i')  -> Token.Type.INT
+            
+            skip('f')  -> Token.Type.FLT
             
             skip(',')  -> Token.Type.SEP
             

@@ -3,45 +3,63 @@ package minim.lexer
 data class Token(val loc: Location, val type: Type, val value: Float = 0F) {
     enum class Type(private val rep: String) {
         VAL("V"),
-        ADD("+"),
-        SUB("-"),
+        
+        PRI("++x"),
+        PRD("--x"),
+        INV("~"),
+        NOT("!"),
+        
+        POI("x++"),
+        POD("x--"),
+        INT("i"),
+        FLT("f"),
+        
         MUL("*"),
         DIV("/"),
         REM("%"),
+        
+        ADD("+"),
+        SUB("-"),
+        
+        SHL("<<"),
+        SHR(">>"),
+        USR(">>>"),
+        
+        LSS("<"),
+        LEQ("<="),
+        GRT(">"),
+        GEQ(">="),
+        
+        EQU("=="),
+        NEQ("<>"),
+    
+        BND("&"),
+    
+        XOR("^"),
+    
+        BOR("|"),
+    
+        AND("&&"),
+        
+        ORR("||"),
+    
+        TRN("?"),
+        
+        ASN("="),
+        
+        NUM("#"),
+        TXT("$"),
+        LBL("_"),
+        SYS("\\"),
+    
         LPR("("),
         RPR(")"),
         LSQ("["),
         RSQ("]"),
         LBC("{"),
         RBC("}"),
-        TRN("?"),
         RNG(":"),
         REL("@"),
-        ASN("="),
-        LSS("<"),
-        LEQ("<="),
-        GRT(">"),
-        GEQ(">="),
-        EQU("=="),
-        NEQ("<>"),
-        AND("&"),
-        BND("&&"),
-        ORR("|"),
-        BOR("||"),
-        INV("~"),
-        NOT("!"),
-        PRI("++x"),
-        PRD("--x"),
-        POI("x++"),
-        POD("x--"),
-        XOR("^"),
-        SHL("<<"),
-        SHR(">>"),
-        USR(">>>"),
-        NUM("#"),
-        TXT("$"),
-        LBL("_"),
-        SYS("\\"),
         SEP(","),
         EOS("."),
         EOF("0");

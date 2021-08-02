@@ -64,9 +64,13 @@ private fun repl() {
         
         println()
         
-        val source = Source("<REPL>", text)
+        val code = "[0] = $text."
+        
+        val source = Source("<REPL>", code)
         
         exec(Config(), source)
+        
+        println()
     }
     while (true)
 }

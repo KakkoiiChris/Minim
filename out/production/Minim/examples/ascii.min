@@ -4,13 +4,13 @@
 
 ; Prints the extended ASCII table in a 16x16 grid
   
-_> T.
+_> 1.
     $< [0]++.
     
     _^ [0] % 16.
         $< '\n'.
         
     _< ?([0] - 256).
-_> F.
+_> 0.
 
 $< '\n'.
