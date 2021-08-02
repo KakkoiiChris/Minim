@@ -33,6 +33,10 @@ sealed class Stmt(val loc: Location) {
         
         fun visitSystemCallStmt(stmt: SystemCall): X
         
+        fun visitMemoryPushStmt(stmt:MemoryPush):X
+        
+        fun visitMemoryPopStmt(stmt:MemoryPop):X
+        
         fun visitVariableAssignStmt(stmt: VariableAssign): X
         
         fun visitFixedRangeAssignStmt(stmt: FixedRangeAssign): X
@@ -100,6 +104,16 @@ sealed class Stmt(val loc: Location) {
     class SystemCall(loc: Location, val expr: Expr) : Stmt(loc) {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitSystemCallStmt(this)
+    }
+    
+    class MemoryPush(loc: Location):Stmt(loc){
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitMemoryPushStmt(this)
+    }
+    
+    class MemoryPop(loc: Location):Stmt(loc){
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitMemoryPopStmt(this)
     }
     
     class VariableAssign(loc: Location, val variable: Expr.Variable, val expr: Expr) : Stmt(loc) {

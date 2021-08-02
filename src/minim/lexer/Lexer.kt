@@ -41,7 +41,7 @@ class Lexer(private val source: Source) {
                 
                 match { isDigit() }      -> listOf(number())
                 
-                match { isLetter() }     -> listOf(literal())
+                match { isLetter() }     -> listOf(word())
                 
                 match('\'')              -> listOf(char())
                 
@@ -176,14 +176,22 @@ class Lexer(private val source: Source) {
         return Token(loc, Token.Type.VAL, result.toFloatOrNull() ?: invalidNumberError(result, loc))
     }
     
-    private fun literal(): Token {
+    private fun word(): Token {
         val loc = here()
         
         val char = peek()
         
         step()
         
-        return Token(loc, Token.Type.VAL, literals[char]!!)
+        return when (char) {
+            'i'  -> Token(loc, Token.Type.INT)
+            
+            'f'  -> Token(loc, Token.Type.FLT)
+            
+            'M'  -> Token(loc, Token.Type.MEM)
+            
+            else -> Token(loc, Token.Type.VAL, literals[char]!!)
+        }
     }
     
     private fun unicode(size: Int) =
@@ -395,10 +403,6 @@ class Lexer(private val source: Source) {
             skip('_')  -> Token.Type.LBL
             
             skip('\\') -> Token.Type.SYS
-            
-            skip('i')  -> Token.Type.INT
-            
-            skip('f')  -> Token.Type.FLT
             
             skip(',')  -> Token.Type.SEP
             

@@ -3,7 +3,6 @@ package minim.runtime
 import minim.util.toBoolean
 import minim.util.toFloat
 import minim.util.toInt
-import java.math.BigDecimal
 
 sealed interface MNumber {
     val value: Any
@@ -182,8 +181,8 @@ sealed interface MNumber {
         override fun toInt() =
             value.toInt()
         
-        override fun toString(): String =
-            BigDecimal("$value").stripTrailingZeros().toPlainString()
+        override fun toString() =
+            value.toString()
     }
     
     class Int(override val value: kotlin.Int = 0) : MNumber {

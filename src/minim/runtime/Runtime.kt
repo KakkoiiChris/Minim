@@ -4,12 +4,13 @@ import minim.lexer.Token
 import minim.parser.Expr
 import minim.parser.Stmt
 import minim.util.*
+import java.math.BigDecimal
 import java.util.*
 import kotlin.collections.ArrayDeque
 import kotlin.math.min
 
 class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
-    private val memory = MArray(config.size)
+    private val memory = Stack<MArray>()
     
     private val labels = mutableMapOf<Float, Int>()
     
@@ -23,11 +24,13 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
     private val systemOutputQueue = ArrayDeque<Float>()
     
     fun run(): Any {
+        memory.push(MArray(config.size))
+        
         while (pos < stmts.size) {
             visit(stmts[pos++])
         }
         
-        return memory.first().value
+        return memory.peek().first().value
     }
     
     override fun visitNoneExpr(expr: Expr.None) = Unit
@@ -287,14 +290,14 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
                 
                 else       -> invalidLeftOperandError(l, expr.op, expr.loc)
             }
-    
+            
             Token.Type.USR -> when (val l = visit(expr.left).fromRef()) {
                 is MNumber -> when (val r = visit(expr.right).fromRef()) {
                     is MNumber -> l usr r
-            
+                    
                     else       -> invalidRightOperandError(r, expr.op, expr.loc)
                 }
-        
+                
                 else       -> invalidLeftOperandError(l, expr.op, expr.loc)
             }
             
@@ -354,7 +357,7 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
     override fun visitVariableExpr(expr: Expr.Variable): Any {
         val index = visit(expr.index).fromRef() as? MNumber ?: invalidMemoryIndexError(expr.index.loc)
         
-        return memory[index.toInt()]
+        return memory.peek()[index.toInt()]
     }
     
     override fun visitFixedRangeExpr(expr: Expr.FixedRange): Any {
@@ -387,7 +390,7 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
         var i = start
         
         while (i <= end) {
-            list.add(memory[i].value)
+            list.add(memory.peek()[i].value)
             
             i += step
         }
@@ -425,7 +428,7 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
         while (c < count) {
             val i = start + c * step
             
-            list.add(memory[i].value)
+            list.add(memory.peek()[i].value)
             
             c++
         }
@@ -447,9 +450,16 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
     }
     
     override fun visitNumberOutStmt(stmt: Stmt.NumberOut) {
-        val number = visit(stmt.expr).fromRef() as? MNumber ?: invalidStatementArgumentError(stmt.expr.loc)
+        val number = visit(stmt.expr).fromRef()
         
-        print(number)
+        number as? MNumber ?: invalidStatementArgumentError(stmt.expr.loc)
+        
+        if (stmt.isIntMode) {
+            print(BigDecimal("${number.value}").stripTrailingZeros().toPlainString())
+        }
+        else {
+            print(number)
+        }
     }
     
     override fun visitTextInStmt(stmt: Stmt.TextIn) {
@@ -505,7 +515,8 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
     
     override fun visitJumpStmt(stmt: Stmt.Jump) {
         val condition =
-            (visit(stmt.condition).fromRef() as? MNumber ?: invalidStatementArgumentError(stmt.condition.loc)).toBoolean()
+            (visit(stmt.condition).fromRef() as? MNumber
+                ?: invalidStatementArgumentError(stmt.condition.loc)).toBoolean()
         
         if (condition) {
             pos++
@@ -545,9 +556,9 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
             do {
                 end++
             }
-            while (memory[end].value.toFloat() != 0F)
+            while (memory.peek()[end].value.toFloat() != 0F)
             
-            val commandName = memory[start until end].ascii
+            val commandName = memory.peek()[start until end].ascii
             
             val command = Library[commandName] ?: undefinedCommandError(commandName, stmt.loc)
             
@@ -569,14 +580,25 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
         }
     }
     
+    override fun visitMemoryPushStmt(stmt: Stmt.MemoryPush) {
+        memory.push(MArray(config.size))
+    }
+    
+    override fun visitMemoryPopStmt(stmt: Stmt.MemoryPop) {
+        if (memory.size > 1) {
+            memory.pop()
+        }
+    }
+    
     override fun visitVariableAssignStmt(stmt: Stmt.VariableAssign) {
         val index =
-            (visit(stmt.variable.index).fromRef() as? MNumber ?: invalidMemoryIndexError(stmt.variable.index.loc)).toInt()
+            (visit(stmt.variable.index).fromRef() as? MNumber
+                ?: invalidMemoryIndexError(stmt.variable.index.loc)).toInt()
         
         when (val expr = visit(stmt.expr).fromRef()) {
-            is MNumber -> memory[index].value = expr
+            is MNumber -> memory.peek()[index].value = expr
             
-            is MArray  -> memory[index].value = expr[0].value
+            is MArray  -> memory.peek()[index].value = expr[0].value
         }
     }
     
@@ -610,7 +632,7 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
                 var memoryIndex = start
                 
                 while (memoryIndex <= end) {
-                    memory[memoryIndex].value = expr
+                    memory.peek()[memoryIndex].value = expr
                     
                     memoryIndex += step
                 }
@@ -622,7 +644,7 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
                 var arrayIndex = 0
                 
                 while (memoryIndex <= end && arrayIndex < expr.size) {
-                    memory[memoryIndex].value = expr[arrayIndex].value
+                    memory.peek()[memoryIndex].value = expr[arrayIndex].value
                     
                     memoryIndex += step
                     
@@ -660,7 +682,7 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
                 var memoryIndex = start
                 
                 while (memoryIndex < start + count) {
-                    memory[memoryIndex].value = expr
+                    memory.peek()[memoryIndex].value = expr
                     
                     memoryIndex += step
                 }
@@ -672,7 +694,7 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
                 var arrayIndex = 0
                 
                 while (memoryIndex < start + count && arrayIndex < expr.size) {
-                    memory[memoryIndex].value = expr[arrayIndex].value
+                    memory.peek()[memoryIndex].value = expr[arrayIndex].value
                     
                     memoryIndex += step
                     

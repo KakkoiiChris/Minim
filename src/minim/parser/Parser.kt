@@ -64,6 +64,8 @@ class Parser(private val tokens: List<Token>) {
             
             match(Token.Type.SYS) -> system()
             
+            match(Token.Type.MEM) -> memory()
+            
             match(Token.Type.EOS) -> Stmt.None(here())
             
             else                  -> expression()
@@ -141,6 +143,20 @@ class Parser(private val tokens: List<Token>) {
             skip(Token.Type.GRT) -> Stmt.SystemCall(loc, expr())
             
             else                 -> invalidStatementHeaderError("\\${peek().type}", loc)
+        }
+    }
+    
+    private fun memory(): Stmt {
+        val loc = here()
+        
+        mustSkip(Token.Type.MEM)
+        
+        return when {
+            skip(Token.Type.ADD) -> Stmt.MemoryPush(loc)
+            
+            skip(Token.Type.SUB) -> Stmt.MemoryPop(loc)
+            
+            else                 -> invalidStatementHeaderError("M${peek().type}", loc)
         }
     }
     

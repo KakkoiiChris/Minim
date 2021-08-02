@@ -9,8 +9,8 @@ import kotlin.time.measureTimedValue
 @ExperimentalTime
 fun main(mainArgs: Array<String>) {
     var args = ""
-    var size = 0xFFFF
     var file = ""
+    var size = 0xFFFF
     
     var i = 0
     
@@ -22,7 +22,23 @@ fun main(mainArgs: Array<String>) {
             
             "f" -> file = mainArgs[++i]
             
-            "s" -> size = mainArgs[++i].toIntOrNull() ?: error("Memory size must be an integer!")
+            "s" -> {
+                val code = mainArgs[++i]
+                
+                val number = code.substring(0, code.length - 1)
+                val suffix = code[code.length - 1]
+                
+                size = when (suffix) {
+                    'K', 'k' -> ((number.toFloatOrNull() ?: error("Memory size must be a number!")) * 1000).toInt()
+                    
+                    'M', 'm' -> ((number.toFloatOrNull() ?: error("Memory size must be a number!")) * 1000000).toInt()
+                    
+                    'B', 'b' -> ((number.toFloatOrNull()
+                        ?: error("Memory size must be a number!")) * 1000000000).toInt()
+                    
+                    else     -> code.toIntOrNull() ?: error("Memory size must be a number!")
+                }
+            }
         }
         
         i++

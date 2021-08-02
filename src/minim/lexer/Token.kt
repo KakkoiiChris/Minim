@@ -51,7 +51,8 @@ data class Token(val loc: Location, val type: Type, val value: Float = 0F) {
         TXT("$"),
         LBL("_"),
         SYS("\\"),
-    
+        MEM("M"),
+        
         LPR("("),
         RPR(")"),
         LSQ("["),
