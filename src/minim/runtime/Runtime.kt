@@ -494,7 +494,7 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
     override fun visitGotoStmt(stmt: Stmt.Goto) {
         val id = (visit(stmt.id).fromRef() as? MNumber ?: invalidStatementArgumentError(stmt.id.loc)).toFloat()
         
-        pos = labels[id] ?: findLabel(id) ?: undefinedLabelError(id, stmt.loc)
+        pos = labels[id] ?: findLabel(id) ?: pos
     }
     
     private fun findLabel(id: Float): Int? {
@@ -528,7 +528,7 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
         
         callStack.push(pos)
         
-        pos = labels[id] ?: findLabel(id) ?: undefinedLabelError(id, stmt.loc)
+        pos = labels[id] ?: findLabel(id) ?: pos
     }
     
     override fun visitReturnStmt(stmt: Stmt.Return) {
