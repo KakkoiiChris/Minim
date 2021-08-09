@@ -1,0 +1,11 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="Minim:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Minim_jar</output-path>
+    <root id="archive" name="Minim.jar">
+      <element id="module-output" name="Minim" />
+      <element id="extracted-dir" path="$KOTLIN_BUNDLED$/lib/kotlin-stdlib.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$KOTLIN_BUNDLED$/lib/kotlin-reflect.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$KOTLIN_BUNDLED$/lib/kotlin-test.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

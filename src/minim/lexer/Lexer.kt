@@ -4,6 +4,8 @@ import minim.util.Source
 import minim.util.invalidCharError
 import minim.util.invalidEscapeError
 import minim.util.invalidNumberError
+import kotlin.math.E
+import kotlin.math.PI
 
 @Suppress("ControlFlowWithEmptyBody")
 class Lexer(private val source: Source) {
@@ -12,7 +14,11 @@ class Lexer(private val source: Source) {
         
         private val literals = mapOf(
             'T' to 1F,
-            'F' to 0F
+            'F' to 0F,
+            'N' to Float.NaN,
+            'I' to Float.POSITIVE_INFINITY,
+            'P' to PI.toFloat(),
+            'E' to E.toFloat()
         )
     }
     
@@ -184,13 +190,17 @@ class Lexer(private val source: Source) {
         step()
         
         return when (char) {
-            'i'  -> Token(loc, Token.Type.INT)
+            'i'                -> Token(loc, Token.Type.INT)
             
-            'f'  -> Token(loc, Token.Type.FLT)
+            'f'                -> Token(loc, Token.Type.FLT)
             
-            'M'  -> Token(loc, Token.Type.MEM)
+            's'                -> Token(loc, Token.Type.STR)
             
-            else -> Token(loc, Token.Type.VAL, literals[char]!!)
+            'M'                -> Token(loc, Token.Type.MEM)
+            
+            'A', 'C', 'L', 'S' -> Token(loc, Token.Type.DYN, char.code.toFloat())
+            
+            else               -> Token(loc, Token.Type.VAL, literals[char]!!)
         }
     }
     

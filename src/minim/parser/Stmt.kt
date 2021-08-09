@@ -24,20 +24,24 @@ sealed class Stmt(val loc: Location) {
         fun visitGotoStmt(stmt: Goto): X
         
         fun visitJumpStmt(stmt: Jump): X
-    
+        
         fun visitGosubStmt(stmt: Gosub): X
-    
+        
         fun visitReturnStmt(stmt: Return): X
         
         fun visitSystemArgStmt(stmt: SystemArg): X
         
         fun visitSystemCallStmt(stmt: SystemCall): X
         
-        fun visitMemoryPushStmt(stmt:MemoryPush):X
+        fun visitMemoryPushStmt(stmt: MemoryPush): X
         
-        fun visitMemoryPopStmt(stmt:MemoryPop):X
+        fun visitMemoryPopStmt(stmt: MemoryPop): X
         
-        fun visitVariableAssignStmt(stmt: VariableAssign): X
+        fun visitMemoryInStmt(stmt: MemoryIn): X
+        
+        fun visitMemoryOutStmt(stmt: MemoryOut): X
+        
+        fun visitSingleAssignStmt(stmt: SingleAssign): X
         
         fun visitFixedRangeAssignStmt(stmt: FixedRangeAssign): X
         
@@ -51,22 +55,22 @@ sealed class Stmt(val loc: Location) {
             visitor.visitNoneStmt(this)
     }
     
-    class NumberIn(loc: Location, val isIntMode:Boolean, val expr: Expr) : Stmt(loc) {
+    class NumberIn(loc: Location, val isIntMode: Boolean, val expr: Expr) : Stmt(loc) {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitNumberInStmt(this)
     }
     
-    class NumberOut(loc: Location, val isIntMode:Boolean, val expr: Expr) : Stmt(loc) {
+    class NumberOut(loc: Location, val isIntMode: Boolean, val expr: Expr) : Stmt(loc) {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitNumberOutStmt(this)
     }
     
-    class TextIn(loc: Location, val isIntMode:Boolean, val expr: Expr) : Stmt(loc) {
+    class TextIn(loc: Location, val isIntMode: Boolean, val expr: Expr) : Stmt(loc) {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitTextInStmt(this)
     }
     
-    class TextOut(loc: Location, val isIntMode:Boolean, val expr: Expr) : Stmt(loc) {
+    class TextOut(loc: Location, val isIntMode: Boolean, val expr: Expr) : Stmt(loc) {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitTextOutStmt(this)
     }
@@ -86,12 +90,12 @@ sealed class Stmt(val loc: Location) {
             visitor.visitJumpStmt(this)
     }
     
-    class Gosub(loc: Location, val id: Expr):Stmt(loc) {
+    class Gosub(loc: Location, val id: Expr) : Stmt(loc) {
         override fun <X> accept(visitor: Visitor<X>) =
             visitor.visitGosubStmt(this)
     }
     
-    class Return(loc: Location, val expr: Expr):Stmt(loc) {
+    class Return(loc: Location) : Stmt(loc) {
         override fun <X> accept(visitor: Visitor<X>) =
             visitor.visitReturnStmt(this)
     }
@@ -106,19 +110,29 @@ sealed class Stmt(val loc: Location) {
             visitor.visitSystemCallStmt(this)
     }
     
-    class MemoryPush(loc: Location):Stmt(loc){
+    class MemoryPush(loc: Location) : Stmt(loc) {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitMemoryPushStmt(this)
     }
     
-    class MemoryPop(loc: Location):Stmt(loc){
+    class MemoryPop(loc: Location) : Stmt(loc) {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitMemoryPopStmt(this)
     }
     
-    class VariableAssign(loc: Location, val variable: Expr.Variable, val expr: Expr) : Stmt(loc) {
+    class MemoryIn(loc: Location, val expr: Expr) : Stmt(loc) {
         override fun <X> accept(visitor: Visitor<X>): X =
-            visitor.visitVariableAssignStmt(this)
+            visitor.visitMemoryInStmt(this)
+    }
+    
+    class MemoryOut(loc: Location, val expr: Expr) : Stmt(loc) {
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitMemoryOutStmt(this)
+    }
+    
+    class SingleAssign(loc: Location, val single: Expr.Single, val expr: Expr) : Stmt(loc) {
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitSingleAssignStmt(this)
     }
     
     class FixedRangeAssign(loc: Location, val range: Expr.FixedRange, val expr: Expr) : Stmt(loc) {

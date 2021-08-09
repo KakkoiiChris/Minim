@@ -70,6 +70,14 @@ class Ref(var value: MNumber = MNumber.Float()) {
         
         return x
     }
+    
+    fun set(float: Float) {
+        value = MNumber.Float(float)
+    }
+    
+    fun set(int: Int) {
+        value = MNumber.Int(int)
+    }
 }
 
 fun Any.fromRef() =

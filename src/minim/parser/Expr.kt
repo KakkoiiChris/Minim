@@ -22,11 +22,13 @@ sealed class Expr(val loc: Location) {
         
         fun visitArrayExpr(expr: Array): X
         
-        fun visitVariableExpr(expr: Variable): X
+        fun visitSingleExpr(expr: Single): X
         
         fun visitFixedRangeExpr(expr: FixedRange): X
         
         fun visitRelativeRangeExpr(expr: RelativeRange): X
+        
+        fun visitDynamicLiteralExpr(expr: DynamicLiteral): X
     }
     
     object None : Expr(Location.none) {
@@ -59,9 +61,9 @@ sealed class Expr(val loc: Location) {
             visitor.visitArrayExpr(this)
     }
     
-    class Variable(loc: Location, val index: Expr) : Expr(loc) {
+    class Single(loc: Location, val index: Expr) : Expr(loc) {
         override fun <X> accept(visitor: Visitor<X>) =
-            visitor.visitVariableExpr(this)
+            visitor.visitSingleExpr(this)
     }
     
     class FixedRange(loc: Location, val start: Expr, val end: Expr, val step: Expr) : Expr(loc) {
@@ -72,5 +74,10 @@ sealed class Expr(val loc: Location) {
     class RelativeRange(loc: Location, val start: Expr, val count: Expr, val step: Expr) : Expr(loc) {
         override fun <X> accept(visitor: Visitor<X>) =
             visitor.visitRelativeRangeExpr(this)
+    }
+    
+    class DynamicLiteral(loc: Location, val char: Char) : Expr(loc) {
+        override fun <X> accept(visitor: Visitor<X>) =
+            visitor.visitDynamicLiteralExpr(this)
     }
 }

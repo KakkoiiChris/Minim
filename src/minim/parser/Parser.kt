@@ -126,7 +126,7 @@ class Parser(private val tokens: List<Token>) {
             
             skip(Token.Type.ADD) -> Stmt.Gosub(loc, expr())
             
-            skip(Token.Type.SUB) -> Stmt.Return(loc, expr())
+            skip(Token.Type.SUB) -> Stmt.Return(loc)
             
             else                 -> invalidStatementHeaderError("_${peek().type}", loc)
         }
@@ -156,6 +156,10 @@ class Parser(private val tokens: List<Token>) {
             
             skip(Token.Type.SUB) -> Stmt.MemoryPop(loc)
             
+            skip(Token.Type.LSS) -> Stmt.MemoryOut(loc, expr())
+            
+            skip(Token.Type.GRT) -> Stmt.MemoryIn(loc, expr())
+            
             else                 -> invalidStatementHeaderError("M${peek().type}", loc)
         }
     }
@@ -167,7 +171,7 @@ class Parser(private val tokens: List<Token>) {
         
         if (expr is Expr.Binary) {
             return when (val left = expr.left) {
-                is Expr.Variable      -> Stmt.VariableAssign(expr.loc, left, expr.right)
+                is Expr.Single        -> Stmt.SingleAssign(expr.loc, left, expr.right)
                 
                 is Expr.FixedRange    -> Stmt.FixedRangeAssign(expr.loc, left, expr.right)
                 
@@ -379,7 +383,7 @@ class Parser(private val tokens: List<Token>) {
     private fun postfix(): Expr {
         var expr = terminal()
         
-        while (match(Token.Type.PRI, Token.Type.PRD, Token.Type.INT, Token.Type.FLT)) {
+        while (match(Token.Type.PRI, Token.Type.PRD, Token.Type.INT, Token.Type.FLT, Token.Type.STR)) {
             val op = peek()
             
             skip(op.type)
@@ -404,7 +408,9 @@ class Parser(private val tokens: List<Token>) {
             
             match(Token.Type.LSQ) -> access()
             
-            match(Token.Type.LBC) -> array()
+            match(Token.Type.LBC)-> array()
+            
+            match(Token.Type.DYN) -> dynamic()
             
             else                  -> invalidTerminalError(peek().type, here())
         }
@@ -443,7 +449,7 @@ class Parser(private val tokens: List<Token>) {
             expr()
         
         if (skip(Token.Type.RSQ)) {
-            return Expr.Variable(loc, a)
+            return Expr.Single(loc, a)
         }
         
         val fixed = skip(Token.Type.RNG)
@@ -513,5 +519,13 @@ class Parser(private val tokens: List<Token>) {
         skip(Token.Type.RBC)
         
         return Expr.Array(token.loc, elements)
+    }
+    
+    private fun dynamic(): Expr.DynamicLiteral {
+        val token = peek()
+        
+        mustSkip(Token.Type.DYN)
+        
+        return Expr.DynamicLiteral(token.loc, token.value.toInt().toChar())
     }
 }

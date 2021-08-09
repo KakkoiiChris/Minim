@@ -13,6 +13,7 @@ data class Token(val loc: Location, val type: Type, val value: Float = 0F) {
         POD("x--"),
         INT("i"),
         FLT("f"),
+        STR("s"),
         
         MUL("*"),
         DIV("/"),
@@ -52,6 +53,8 @@ data class Token(val loc: Location, val type: Type, val value: Float = 0F) {
         LBL("_"),
         SYS("\\"),
         MEM("M"),
+        
+        DYN("C"),
         
         LPR("("),
         RPR(")"),
