@@ -438,7 +438,7 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
             
             else       -> invalidRangeExprError("start", expr.start.loc)
         }
-    
+        
         if (start < 0) {
             start = config.size - start
         }
@@ -450,7 +450,7 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
             
             else       -> invalidRangeExprError("end", expr.end.loc)
         }
-    
+        
         if (end < 0) {
             end = config.size - end
         }
@@ -484,7 +484,7 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
             
             else       -> invalidRangeExprError("start", expr.start.loc)
         }
-    
+        
         if (start < 0) {
             start = config.size - start
         }
@@ -577,6 +577,10 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
         val number = visit(stmt.expr).fromRef() as? MNumber ?: invalidStatementArgumentError(stmt.expr.loc)
         
         print(number.toChar())
+    }
+    
+    override fun visitTextFlushStmt(stmt: Stmt.TextFlush) {
+        inputQueue.clear()
     }
     
     override fun visitLabelStmt(stmt: Stmt.Label) {
@@ -672,6 +676,11 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
         }
     }
     
+    override fun visitSystemFlushStmt(stmt: Stmt.SystemFlush) {
+        systemInputQueue.clear()
+        systemOutputQueue.clear()
+    }
+    
     override fun visitMemoryPushStmt(stmt: Stmt.MemoryPush) {
         memory.push(MArray(config.size))
     }
@@ -690,6 +699,10 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
         val ref = visit(stmt.expr) as? Ref ?: invalidStatementArgumentError(stmt.expr.loc)
         
         ref.value = memoryQueue.removeFirst()
+    }
+    
+    override fun visitMemoryFlushStmt(stmt: Stmt.MemoryFlush) {
+        memoryQueue.clear()
     }
     
     override fun visitSingleAssignStmt(stmt: Stmt.SingleAssign) {

@@ -108,6 +108,8 @@ class Parser(private val tokens: List<Token>) {
             
             skip(Token.Type.GRT) -> Stmt.TextIn(loc, isIntMode(), expr())
             
+            skip(Token.Type.NOT) -> Stmt.TextFlush(loc)
+            
             else                 -> invalidStatementHeaderError("\$${peek().type}", loc)
         }
     }
@@ -142,6 +144,8 @@ class Parser(private val tokens: List<Token>) {
             
             skip(Token.Type.GRT) -> Stmt.SystemCall(loc, expr())
             
+            skip(Token.Type.NOT) -> Stmt.SystemFlush(loc)
+            
             else                 -> invalidStatementHeaderError("\\${peek().type}", loc)
         }
     }
@@ -159,6 +163,8 @@ class Parser(private val tokens: List<Token>) {
             skip(Token.Type.LSS) -> Stmt.MemoryOut(loc, expr())
             
             skip(Token.Type.GRT) -> Stmt.MemoryIn(loc, expr())
+            
+            skip(Token.Type.NOT) -> Stmt.MemoryFlush(loc)
             
             else                 -> invalidStatementHeaderError("M${peek().type}", loc)
         }
@@ -408,7 +414,7 @@ class Parser(private val tokens: List<Token>) {
             
             match(Token.Type.LSQ) -> access()
             
-            match(Token.Type.LBC)-> array()
+            match(Token.Type.LBC) -> array()
             
             match(Token.Type.DYN) -> dynamic()
             

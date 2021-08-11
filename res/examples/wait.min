@@ -1,0 +1,10 @@
+; Wait                \
+  Christian Alexander \
+  07/12/2021
+  
+[0 :] = "wait".
+
+\< 0.
+\< 3.
+
+\> [0].

@@ -326,20 +326,36 @@ class Lexer(private val source: Source) {
             skip('+')  -> when {
                 skip('+') -> Token.Type.PRI
                 
+                skip('=') -> Token.Type.CAD
+                
                 else      -> Token.Type.ADD
             }
             
             skip('-')  -> when {
                 skip('-') -> Token.Type.PRD
                 
+                skip('=') -> Token.Type.CSB
+                
                 else      -> Token.Type.SUB
             }
             
-            skip('*')  -> Token.Type.MUL
+            skip('*')  -> when {
+                skip('=') -> Token.Type.CML
+                
+                else      -> Token.Type.MUL
+            }
             
-            skip('/')  -> Token.Type.DIV
+            skip('/')  -> when {
+                skip('=') -> Token.Type.CDV
+                
+                else      -> Token.Type.DIV
+            }
             
-            skip('%')  -> Token.Type.REM
+            skip('%')  -> when {
+                skip('=') -> Token.Type.CRM
+                
+                else      -> Token.Type.REM
+            }
             
             skip('(')  -> Token.Type.LPR
             
@@ -364,7 +380,11 @@ class Lexer(private val source: Source) {
             }
             
             skip('<')  -> when {
-                skip('<') -> Token.Type.SHL
+                skip('<') -> when {
+                    skip('=') -> Token.Type.CSL
+                    
+                    else      -> Token.Type.SHL
+                }
                 
                 skip('>') -> Token.Type.NEQ
                 
@@ -375,7 +395,13 @@ class Lexer(private val source: Source) {
             
             skip('>')  -> when {
                 skip('>') -> when {
-                    skip('>') -> Token.Type.USR
+                    skip('>') -> when {
+                        skip('=') -> Token.Type.CUR
+                        
+                        else      -> Token.Type.USR
+                    }
+    
+                    skip('=') -> Token.Type.CSR
                     
                     else      -> Token.Type.SHR
                 }
@@ -387,18 +413,34 @@ class Lexer(private val source: Source) {
             
             
             skip('&')  -> when {
-                skip('&') -> Token.Type.AND
+                skip('&') -> when {
+                    skip('=') -> Token.Type.CND
+                    
+                    else      -> Token.Type.AND
+                }
+                
+                skip('=') -> Token.Type.CBN
                 
                 else      -> Token.Type.BND
             }
             
             skip('|')  -> when {
-                skip('|') -> Token.Type.ORR
+                skip('|') -> when {
+                    skip('=') -> Token.Type.COR
+                    
+                    else      -> Token.Type.ORR
+                }
+                
+                skip('=') -> Token.Type.CBR
                 
                 else      -> Token.Type.BOR
             }
             
-            skip('^')  -> Token.Type.XOR
+            skip('^')  -> when {
+                skip('=') -> Token.Type.CXR
+                
+                else      -> Token.Type.XOR
+            }
             
             skip('!')  -> Token.Type.NOT
             

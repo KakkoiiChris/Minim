@@ -18,6 +18,8 @@ sealed class Stmt(val loc: Location) {
         fun visitTextInStmt(stmt: TextIn): X
         
         fun visitTextOutStmt(stmt: TextOut): X
+    
+        fun visitTextFlushStmt(stmt: TextFlush): X
         
         fun visitLabelStmt(stmt: Label): X
         
@@ -32,6 +34,8 @@ sealed class Stmt(val loc: Location) {
         fun visitSystemArgStmt(stmt: SystemArg): X
         
         fun visitSystemCallStmt(stmt: SystemCall): X
+    
+        fun visitSystemFlushStmt(stmt: SystemFlush): X
         
         fun visitMemoryPushStmt(stmt: MemoryPush): X
         
@@ -40,6 +44,8 @@ sealed class Stmt(val loc: Location) {
         fun visitMemoryInStmt(stmt: MemoryIn): X
         
         fun visitMemoryOutStmt(stmt: MemoryOut): X
+    
+        fun visitMemoryFlushStmt(stmt: MemoryFlush): X
         
         fun visitSingleAssignStmt(stmt: SingleAssign): X
         
@@ -73,6 +79,11 @@ sealed class Stmt(val loc: Location) {
     class TextOut(loc: Location, val isIntMode: Boolean, val expr: Expr) : Stmt(loc) {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitTextOutStmt(this)
+    }
+    
+    class TextFlush(loc: Location):Stmt(loc){
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitTextFlushStmt(this)
     }
     
     class Label(loc: Location, val id: Expr) : Stmt(loc) {
@@ -110,6 +121,11 @@ sealed class Stmt(val loc: Location) {
             visitor.visitSystemCallStmt(this)
     }
     
+    class SystemFlush(loc: Location):Stmt(loc){
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitSystemFlushStmt(this)
+    }
+    
     class MemoryPush(loc: Location) : Stmt(loc) {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitMemoryPushStmt(this)
@@ -128,6 +144,11 @@ sealed class Stmt(val loc: Location) {
     class MemoryOut(loc: Location, val expr: Expr) : Stmt(loc) {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitMemoryOutStmt(this)
+    }
+    
+    class MemoryFlush(loc: Location):Stmt(loc){
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitMemoryFlushStmt(this)
     }
     
     class SingleAssign(loc: Location, val single: Expr.Single, val expr: Expr) : Stmt(loc) {
