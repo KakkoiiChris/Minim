@@ -1,5 +1,6 @@
 package minim.parser
 
+import minim.lexer.Location
 import minim.lexer.Token
 import minim.util.*
 
@@ -195,17 +196,62 @@ class Parser(private val tokens: List<Token>) {
     private fun assign(): Expr {
         val expr = conditional()
         
-        return if (match(Token.Type.ASN)) {
+        return if (match(Token.Type.ASN,
+                Token.Type.CML,
+                Token.Type.CDV,
+                Token.Type.CRM,
+                Token.Type.CAD,
+                Token.Type.CSB,
+                Token.Type.CSL,
+                Token.Type.CSR,
+                Token.Type.CUR,
+                Token.Type.CBN,
+                Token.Type.CXR,
+                Token.Type.CBR,
+                Token.Type.CND,
+                Token.Type.COR)
+        ) {
             val op = peek()
             
             mustSkip(op.type)
             
-            Expr.Binary(op.loc, op.type, expr, assign())
+            when (op.type) {
+                Token.Type.CML -> compoundAssign(op.loc, expr, Token.Type.MUL)
+                
+                Token.Type.CDV -> compoundAssign(op.loc, expr, Token.Type.DIV)
+                
+                Token.Type.CRM -> compoundAssign(op.loc, expr, Token.Type.REM)
+                
+                Token.Type.CAD -> compoundAssign(op.loc, expr, Token.Type.ADD)
+                
+                Token.Type.CSB -> compoundAssign(op.loc, expr, Token.Type.SUB)
+                
+                Token.Type.CSL -> compoundAssign(op.loc, expr, Token.Type.SHL)
+                
+                Token.Type.CSR -> compoundAssign(op.loc, expr, Token.Type.SHR)
+                
+                Token.Type.CUR -> compoundAssign(op.loc, expr, Token.Type.USR)
+                
+                Token.Type.CBN -> compoundAssign(op.loc, expr, Token.Type.BND)
+                
+                Token.Type.CXR -> compoundAssign(op.loc, expr, Token.Type.XOR)
+                
+                Token.Type.CBR -> compoundAssign(op.loc, expr, Token.Type.BOR)
+                
+                Token.Type.CND -> compoundAssign(op.loc, expr, Token.Type.AND)
+                
+                Token.Type.COR -> compoundAssign(op.loc, expr, Token.Type.ORR)
+                
+                else           -> Expr.Binary(op.loc, op.type, expr, assign())
+            }
         }
         else {
             expr
         }
     }
+    
+    private fun compoundAssign(loc: Location, expr: Expr, type: Token.Type) =
+        Expr.Binary(loc, Token.Type.ASN, expr, Expr.Binary(loc, type, expr, assign()))
     
     private fun conditional(): Expr {
         var node = logicalOr()
