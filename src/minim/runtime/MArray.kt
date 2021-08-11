@@ -1,7 +1,5 @@
 package minim.runtime
 
-import kotlin.math.max
-
 class MArray(private val elements: List<Ref>) : List<Ref> by elements {
     constructor(size: Int) : this(List(size) { Ref(MNumber.Float()) })
     
@@ -14,20 +12,37 @@ class MArray(private val elements: List<Ref>) : List<Ref> by elements {
         val widths = IntArray(size)
         
         for (i in indices) {
+            val widthI = i.toString().length
             val widthN = get(i).value.toString().length
-            val widthC = get(i).value.toChar().toString().length
+            val widthC = get(i).value.toChar().slashify().length
             
-            widths[i] = max(widthN, widthC)
+            widths[i] = maxOf(widthI, widthN, widthC)
         }
         
-        println(mapIndexed { i, e -> e.value.toString().padStart(widths[i]) }.joinToString())
-    
-        println(mapIndexed { i, e -> e.value.toChar().toString().padStart(widths[i]) }.joinToString())
+        println(mapIndexed { i, _ -> i.toString().padStart(widths[i]) }.joinToString(prefix = "INDEX: ", separator = " | "))
+        
+        println(mapIndexed { i, e -> e.value.toString().padStart(widths[i]) }.joinToString(prefix = "VALUE: ", separator = " | "))
+        
+        println(mapIndexed { i, e -> e.value.toChar().slashify().padStart(widths[i]) }.joinToString(prefix = " CHAR: ", separator = " | "))
     }
     
     override fun toString() =
         map { it.fromRef() }.joinToString(prefix = "{ ", separator = ", ", postfix = " }")
 }
 
-fun String.toMArray()=
+fun Char.slashify() = when (this) {
+    '\\'     -> "\\\\"
+    '\''     -> "\\'"
+    '\u0000' -> "\\0"
+    '\u0007' -> "\\a"
+    '\b'     -> "\\b"
+    '\u000c' -> "\\f"
+    '\n'     -> "\\n"
+    '\r'     -> "\\r"
+    '\t'     -> "\\t"
+    '\u000B' -> "\\v"
+    else     -> "$this"
+}
+
+fun String.toMArray() =
     MArray(map { Ref(MNumber.Int(it.code)) })

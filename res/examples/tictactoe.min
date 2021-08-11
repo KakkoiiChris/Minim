@@ -80,29 +80,51 @@ _> '('.
             _< ']'.
         _>'B'.
         
+        ; Check tie
+        [11] = [12] = 0.
+        _> 8.
+            [12] += ([[11]] == 'X' || [[11]] == 'O').
+            
+            _< 7 + (++[11] < 9).
+        _> 7.
+        
+        _< 'T' + ([12] == 9) * 32.
+        _>'t'.
+            [9] = ' '.
+            _< ']'.
+        _>'T'.
+        
         ; Toggle turn
         [9] = [9] == 'X' ? 'O' : 'X'.
         
         _< '['.
     _> ']'.
     
-    ; Print final board, win message, and new game prompt
-    [12 :] = " % | % | %\n---+---+---\n % | % | %\n---+---+---\n % | % | %\n\nPlayer % wins!\n\nPlay again?\n\n(Y/N) > " % [@ 10].
+    ; Print final board
+    [12 :] = " % | % | %\n---+---+---\n % | % | %\n---+---+---\n % | % | %\n\n" % [@ 9].
+    _+ 'P'.
+    
+    ; Print result message
+    [12 :] = [9] == ' ' ? "It's a tie!\n\n" : "Player % wins!\n\n" % [9].
+    _+ 'P'.
+    
+    ; Print new game prompt
+    [12 :] = "Play again?\n\n(Y/N) > ".
     _+ 'P'.
     
     ; Input validation - correct character
-    _> 7.
+    _> 9.
         $> [10].
         $!.
         
         _^ [10] <> 'Y' && [10] <> 'y' && [10] <> 'N' && [10] <> 'n'.
-            _< 8.
+            _< 10.
         
         [12 :] = "\n(Y/N) > ".
         _+ 'P'.
         
-        _< 7.
-    _> 8.
+        _< 9.
+    _> 10.
     
     $< '\n'.
     
@@ -110,7 +132,7 @@ _> '('.
 _> ')'.
 
 ; Print goodbye
-[12 :] = "Thanks for playing!\n".
+[12 :] = "Thanks for playing!\n\n".
 _+ 'P'.
 
 ; Gosub guard
