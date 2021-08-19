@@ -1,5 +1,7 @@
 package minim.lexer
 
+import minim.lexer.Token.Type.*
+import minim.parser.Expr
 import minim.util.Source
 import minim.util.invalidCharError
 import minim.util.invalidEscapeError
@@ -57,7 +59,7 @@ class Lexer(private val source: Source) {
             })
         }
         
-        tokens += Token(here(), Token.Type.EOF)
+        tokens += Token(here(), EndOfFile)
         
         return tokens
     }
@@ -179,7 +181,7 @@ class Lexer(private val source: Source) {
             }
         }
         
-        return Token(loc, Token.Type.VAL, result.toFloatOrNull() ?: invalidNumberError(result, loc))
+        return Token(loc, Value, result.toFloatOrNull() ?: invalidNumberError(result, loc))
     }
     
     private fun word(): Token {
@@ -189,18 +191,20 @@ class Lexer(private val source: Source) {
         
         step()
         
+        if (char in Expr.DynamicLiteral.Name) {
+            return Token(loc, Dynamic, char.code.toFloat())
+        }
+        
         return when (char) {
-            'i'                -> Token(loc, Token.Type.INT)
+            'i'  -> Token(loc, SmallI)
             
-            'f'                -> Token(loc, Token.Type.FLT)
+            'f'  -> Token(loc, SmallF)
             
-            's'                -> Token(loc, Token.Type.STR)
+            's'  -> Token(loc, SmallS)
             
-            'M'                -> Token(loc, Token.Type.MEM)
+            'M'  -> Token(loc, BigM)
             
-            'A', 'C', 'L', 'S' -> Token(loc, Token.Type.DYN, char.code.toFloat())
-            
-            else               -> Token(loc, Token.Type.VAL, literals[char]!!)
+            else -> Token(loc, Value, literals[char] ?: invalidCharError(char, loc))
         }
     }
     
@@ -255,7 +259,7 @@ class Lexer(private val source: Source) {
         
         step()
         
-        return Token(loc, Token.Type.VAL, char.code.toFloat())
+        return Token(loc, Value, char.code.toFloat())
     }
     
     private fun string(): List<Token> {
@@ -302,19 +306,19 @@ class Lexer(private val source: Source) {
         
         val tokens = mutableListOf<Token>()
         
-        tokens += Token(loc, Token.Type.LBC)
+        tokens += Token(loc, LeftBrace)
         
         for ((i, c) in result.withIndex()) {
             if (i > 0) {
-                tokens += Token(loc, Token.Type.SEP)
+                tokens += Token(loc, Comma)
             }
             
-            tokens += Token(loc, Token.Type.VAL, c.code.toFloat())
+            tokens += Token(loc, Value, c.code.toFloat())
         }
         
-        tokens += Token(loc, Token.Type.SEP)
-        tokens += Token(loc, Token.Type.VAL, 0F)
-        tokens += Token(loc, Token.Type.RBC)
+        tokens += Token(loc, Comma)
+        tokens += Token(loc, Value, 0F)
+        tokens += Token(loc, RightBrace)
         
         return tokens
     }
@@ -324,141 +328,153 @@ class Lexer(private val source: Source) {
         
         val op = when {
             skip('+')  -> when {
-                skip('+') -> Token.Type.PRI
+                skip('+') -> DoublePlus
                 
-                skip('=') -> Token.Type.CAD
+                skip('=') -> PlusEqual
                 
-                else      -> Token.Type.ADD
+                else      -> Plus
             }
             
             skip('-')  -> when {
-                skip('-') -> Token.Type.PRD
+                skip('-') -> DoubleMinus
                 
-                skip('=') -> Token.Type.CSB
+                skip('=') -> MinusEqual
                 
-                else      -> Token.Type.SUB
+                else      -> Minus
             }
             
             skip('*')  -> when {
-                skip('=') -> Token.Type.CML
+                skip('=') -> StarEqual
                 
-                else      -> Token.Type.MUL
+                else      -> Star
             }
             
             skip('/')  -> when {
-                skip('=') -> Token.Type.CDV
+                skip('=') -> SlashEqual
                 
-                else      -> Token.Type.DIV
+                else      -> Slash
             }
             
             skip('%')  -> when {
-                skip('=') -> Token.Type.CRM
+                skip('=') -> PercentEqual
                 
-                else      -> Token.Type.REM
+                else      -> Percent
             }
             
-            skip('(')  -> Token.Type.LPR
+            skip('(')  -> LeftParen
             
-            skip(')')  -> Token.Type.RPR
+            skip(')')  -> RightParen
             
-            skip('[')  -> Token.Type.LSQ
+            skip('[')  -> LeftSquare
             
-            skip(']')  -> Token.Type.RSQ
+            skip(']')  -> RightSquare
             
-            skip('{')  -> Token.Type.LBC
+            skip('{')  -> LeftBrace
             
-            skip('}')  -> Token.Type.RBC
+            skip('}')  -> RightBrace
             
-            skip('?')  -> Token.Type.TRN
+            skip('?')  -> when {
+                skip('?') -> DoubleQuestion
+                
+                else      -> Question
+            }
             
-            skip(':')  -> Token.Type.RNG
+            skip(':')  -> Colon
             
             skip('=')  -> when {
-                skip('=') -> Token.Type.EQU
+                skip('=') -> DoubleEqual
                 
-                else      -> Token.Type.ASN
+                else      -> EqualSign
             }
             
             skip('<')  -> when {
                 skip('<') -> when {
-                    skip('=') -> Token.Type.CSL
+                    skip('=') -> DoubleLessEqual
                     
-                    else      -> Token.Type.SHL
+                    else      -> DoubleLess
                 }
                 
-                skip('>') -> Token.Type.NEQ
+                skip('>') -> LessGreater
                 
-                skip('=') -> Token.Type.LEQ
+                skip('=') -> LessEqualSign
                 
-                else      -> Token.Type.LSS
+                else      -> LessSign
             }
             
             skip('>')  -> when {
                 skip('>') -> when {
                     skip('>') -> when {
-                        skip('=') -> Token.Type.CUR
+                        skip('=') -> TripleGreaterEqual
                         
-                        else      -> Token.Type.USR
+                        else      -> TripleGreater
                     }
-    
-                    skip('=') -> Token.Type.CSR
                     
-                    else      -> Token.Type.SHR
+                    skip('=') -> DoubleGreaterEqual
+                    
+                    else      -> DoubleGreater
                 }
                 
-                skip('=') -> Token.Type.GEQ
+                skip('=') -> GreaterEqualSign
                 
-                else      -> Token.Type.GRT
+                else      -> GreaterSign
             }
             
             
             skip('&')  -> when {
                 skip('&') -> when {
-                    skip('=') -> Token.Type.CND
+                    skip('=') -> DoubleAndEqual
                     
-                    else      -> Token.Type.AND
+                    else      -> DoubleAnd
                 }
                 
-                skip('=') -> Token.Type.CBN
+                skip('=') -> AndEqual
                 
-                else      -> Token.Type.BND
+                else      -> Ampersand
             }
             
             skip('|')  -> when {
                 skip('|') -> when {
-                    skip('=') -> Token.Type.COR
+                    skip('=') -> DoublePipeEqual
                     
-                    else      -> Token.Type.ORR
+                    else      -> DoublePipe
                 }
                 
-                skip('=') -> Token.Type.CBR
+                skip('=') -> PipeEqual
                 
-                else      -> Token.Type.BOR
+                else      -> Pipe
             }
             
             skip('^')  -> when {
-                skip('=') -> Token.Type.CXR
+                skip('=') -> CaretEqual
                 
-                else      -> Token.Type.XOR
+                else      -> Caret
             }
             
-            skip('!')  -> Token.Type.NOT
+            skip('!')  -> when {
+                skip('!') -> DoubleExclamation
+                
+                else      -> Exclamation
+            }
             
-            skip('~')  -> Token.Type.INV
+            skip('~')  -> when {
+                skip('~') -> DoubleTilde
+                
+                else      -> Tilde
+            }
             
-            skip('@')  -> Token.Type.REL
+            skip('@')  -> At
             
-            skip('#')  -> Token.Type.NUM
+            skip('#')  -> Number
             
-            skip('$')  -> Token.Type.TXT
+            skip('$')  -> Dollar
             
-            skip('_')  -> Token.Type.LBL
+            skip('_')  -> Underscore
             
-            skip('\\') -> Token.Type.SYS
+            skip('\\') -> Backslash
             
-            skip(',')  -> Token.Type.SEP
+            skip(',')  -> Comma
             
-            skip('.')  -> Token.Type.EOS
+            skip('.')  -> Dot
             
             else       -> invalidCharError(peek(), here())
         }

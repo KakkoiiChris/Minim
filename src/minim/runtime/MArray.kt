@@ -19,11 +19,14 @@ class MArray(private val elements: List<Ref>) : List<Ref> by elements {
             widths[i] = maxOf(widthI, widthN, widthC)
         }
         
-        println(mapIndexed { i, _ -> i.toString().padStart(widths[i]) }.joinToString(prefix = "INDEX: ", separator = " | "))
+        println(mapIndexed { i, _ -> i.toString().padStart(widths[i]) }.joinToString(prefix = "INDEX: ",
+            separator = " | "))
         
-        println(mapIndexed { i, e -> e.value.toString().padStart(widths[i]) }.joinToString(prefix = "VALUE: ", separator = " | "))
+        println(mapIndexed { i, e -> e.value.toString().padStart(widths[i]) }.joinToString(prefix = "VALUE: ",
+            separator = " | "))
         
-        println(mapIndexed { i, e -> e.value.toChar().slashify().padStart(widths[i]) }.joinToString(prefix = " CHAR: ", separator = " | "))
+        println(mapIndexed { i, e -> e.value.toChar().slashify().padStart(widths[i]) }.joinToString(prefix = " CHAR: ",
+            separator = " | "))
     }
     
     override fun toString() =
@@ -31,8 +34,6 @@ class MArray(private val elements: List<Ref>) : List<Ref> by elements {
 }
 
 fun Char.slashify() = when (this) {
-    '\\'     -> "\\\\"
-    '\''     -> "\\'"
     '\u0000' -> "\\0"
     '\u0007' -> "\\a"
     '\b'     -> "\\b"

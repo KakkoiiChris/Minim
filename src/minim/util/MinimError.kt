@@ -2,6 +2,7 @@ package minim.util
 
 import minim.lexer.Location
 import minim.lexer.Token
+import minim.parser.Expr
 
 class MinimError(stage: Stage, msg: String, loc: Location) : Throwable("ERROR @ ${stage.name}: $msg @ $loc") {
     enum class Stage {
@@ -51,8 +52,8 @@ fun invalidTypeError(invalid: Token.Type, expected: Token.Type, loc: Location): 
 fun runtimeError(msg: String, loc: Location): Nothing =
     throw MinimError(MinimError.Stage.RUNTIME, msg, loc)
 
-fun invalidLeftOperandError(operand: Any, op: Token.Type, loc: Location): Nothing =
-    runtimeError("Left operand '$operand' for binary operator '$op' is invalid!", loc)
+fun invalidLeftOperandError(operand: Any, operator: Expr.Binary.Operator, loc: Location): Nothing =
+    runtimeError("Left operand '$operand' for '$operator' operator is invalid!", loc)
 
 fun invalidMemoryIndexError(loc: Location): Nothing =
     runtimeError("Memory index must be a number!", loc)
@@ -63,14 +64,17 @@ fun invalidNumericalInputError(input: String, loc: Location): Nothing =
 fun invalidRangeExprError(name:String, loc: Location):Nothing=
     runtimeError("Range $name expression must yield a number!", loc)
 
-fun invalidRightOperandError(operand: Any, op: Token.Type, loc: Location): Nothing =
-    runtimeError("Right operand '$operand' for binary operator '$op' is invalid!", loc)
+fun invalidRightOperandError(operand: Any, operator: Expr.Binary.Operator, loc: Location): Nothing =
+    runtimeError("Right operand '$operand' for '$operator' operator is invalid!", loc)
 
 fun invalidTestExprError(loc: Location): Nothing =
     runtimeError("Test expression must be a boolean!", loc)
 
-fun invalidUnaryOperandError(operand: Any, op: Token.Type, loc: Location): Nothing =
-    runtimeError("Operand '$operand' for unary operator '$op' is invalid!", loc)
+fun invalidPrefixOperandError(operand: Any, operator: Expr.Prefix.Operator, loc: Location): Nothing =
+    runtimeError("Operand '$operand' for prefix '$operator' operator is invalid!", loc)
+
+fun invalidPostfixOperandError(operand: Any, operator: Expr.Postfix.Operator, loc: Location): Nothing =
+    runtimeError("Operand '$operand' for postfix '$operator' operator is invalid!", loc)
 
 fun invalidStatementArgumentError(loc: Location): Nothing =
     runtimeError("Statement argument must be a single number!", loc)

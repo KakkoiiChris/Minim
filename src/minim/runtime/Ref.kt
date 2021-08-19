@@ -29,6 +29,24 @@ class Ref(var value: MNumber = MNumber.Float()) {
         }
     }
     
+    fun preNarrow(): MNumber {
+        value = value.narrow()
+        
+        return value
+    }
+    
+    fun preToggle(): MNumber {
+        value = value.not()
+        
+        return value
+    }
+    
+    fun preInvert(): MNumber {
+        value = value.inv()
+        
+        return value
+    }
+    
     fun postIncrement() = when (value) {
         is MNumber.Float -> {
             val before = value
@@ -65,6 +83,30 @@ class Ref(var value: MNumber = MNumber.Float()) {
         }
     }
     
+    fun postNarrow(): MNumber {
+        val before = value
+        
+        value = value.narrow()
+        
+        return before
+    }
+    
+    fun postToggle(): MNumber {
+        val before = value
+        
+        value = value.not()
+        
+        return before
+    }
+    
+    fun postInvert(): MNumber {
+        val before = value
+        
+        value = value.inv()
+        
+        return before
+    }
+    
     fun assign(x: MNumber): MNumber {
         value = x
         
@@ -78,6 +120,9 @@ class Ref(var value: MNumber = MNumber.Float()) {
     fun set(int: Int) {
         value = MNumber.Int(int)
     }
+    
+    override fun toString() =
+        "&${value.toChar()}"
 }
 
 fun Any.fromRef() =

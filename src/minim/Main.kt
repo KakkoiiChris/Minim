@@ -10,7 +10,7 @@ import kotlin.time.measureTimedValue
 fun main(mainArgs: Array<String>) {
     var args = ""
     var file = ""
-    var size = 0xFFFF
+    var size = 0x10000
     
     var i = 0
     

@@ -1,15 +1,29 @@
 package minim.runtime
 
-import minim.lexer.Token
 import minim.parser.Expr
+import minim.parser.Expr.Binary.Operator.*
+import minim.parser.Expr.DynamicLiteral.Name.*
+import minim.parser.Expr.Postfix.Operator.*
+import minim.parser.Expr.Prefix.Operator.*
 import minim.parser.Stmt
 import minim.util.*
 import java.math.BigDecimal
 import java.util.*
 import kotlin.collections.ArrayDeque
 import kotlin.math.min
+import kotlin.math.sign
+import minim.parser.Expr.Postfix.Operator.Decrement as PostDecrement
+import minim.parser.Expr.Postfix.Operator.Increment as PostIncrement
+import minim.parser.Expr.Postfix.Operator.Inverted as PostInverted
+import minim.parser.Expr.Postfix.Operator.Narrowed as PostNarrowed
+import minim.parser.Expr.Postfix.Operator.Toggled as PostToggled
+import minim.parser.Expr.Prefix.Operator.Decrement as PreDecrement
+import minim.parser.Expr.Prefix.Operator.Increment as PreIncrement
+import minim.parser.Expr.Prefix.Operator.Inverted as PreInverted
+import minim.parser.Expr.Prefix.Operator.Narrowed as PreNarrowed
+import minim.parser.Expr.Prefix.Operator.Toggled as PreToggled
 
-class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
+class Runtime(private val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     private val memory = Stack<MArray>()
     
     private val labels = mutableMapOf<Float, Int>()
@@ -34,6 +48,7 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
             counter.preIncrement()
         }
         
+        println()
         memory.peek()[0..0xFF].printDebug()
         
         return memory.peek().first().value
@@ -41,93 +56,131 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
     
     override fun visitNoneExpr(expr: Expr.None) = Unit
     
-    override fun visitUnaryExpr(expr: Expr.Unary): Any {
-        return when (expr.op) {
-            Token.Type.SUB -> when (val e = visit(expr.expr).fromRef()) {
+    override fun visitPrefixExpr(expr: Expr.Prefix): Any {
+        return when (expr.operator) {
+            Negative     -> when (val e = visit(expr.expr).fromRef()) {
                 is MNumber -> -e
                 
-                else       -> invalidUnaryOperandError(e, expr.op, expr.loc)
+                else       -> invalidPrefixOperandError(e, expr.operator, expr.loc)
             }
             
-            Token.Type.NOT -> when (val e = visit(expr.expr).fromRef()) {
+            Not          -> when (val e = visit(expr.expr).fromRef()) {
                 is MNumber -> !e
                 
-                else       -> invalidUnaryOperandError(e, expr.op, expr.loc)
+                else       -> invalidPrefixOperandError(e, expr.operator, expr.loc)
             }
             
-            Token.Type.TRN -> when (val e = visit(expr.expr).fromRef()) {
+            Narrow       -> when (val e = visit(expr.expr).fromRef()) {
                 is MNumber -> e.narrow()
                 
-                else       -> invalidUnaryOperandError(e, expr.op, expr.loc)
+                else       -> invalidPrefixOperandError(e, expr.operator, expr.loc)
             }
             
-            Token.Type.INV -> when (val e = visit(expr.expr).fromRef()) {
+            Invert       -> when (val e = visit(expr.expr).fromRef()) {
                 is MNumber -> e.inv()
                 
-                else       -> invalidUnaryOperandError(e, expr.op, expr.loc)
+                else       -> invalidPrefixOperandError(e, expr.operator, expr.loc)
             }
             
-            Token.Type.PRI -> when (val e = visit(expr.expr)) {
+            PreIncrement -> when (val e = visit(expr.expr)) {
                 is Ref -> e.preIncrement()
                 
-                else   -> invalidUnaryOperandError(e, expr.op, expr.loc)
+                else   -> invalidPrefixOperandError(e, expr.operator, expr.loc)
             }
             
-            Token.Type.PRD -> when (val e = visit(expr.expr)) {
+            PreDecrement -> when (val e = visit(expr.expr)) {
                 is Ref -> e.preDecrement()
                 
-                else   -> invalidUnaryOperandError(e, expr.op, expr.loc)
+                else   -> invalidPrefixOperandError(e, expr.operator, expr.loc)
             }
             
-            Token.Type.POI -> when (val e = visit(expr.expr)) {
+            PreNarrowed  -> when (val e = visit(expr.expr)) {
+                is Ref -> e.preNarrow()
+                
+                else   -> invalidPrefixOperandError(e, expr.operator, expr.loc)
+            }
+            
+            PreToggled   -> when (val e = visit(expr.expr)) {
+                is Ref -> e.preToggle()
+                
+                else   -> invalidPrefixOperandError(e, expr.operator, expr.loc)
+            }
+            
+            PreInverted  -> when (val e = visit(expr.expr)) {
+                is Ref -> e.preInvert()
+                
+                else   -> invalidPrefixOperandError(e, expr.operator, expr.loc)
+            }
+        }
+    }
+    
+    override fun visitPostfixExpr(expr: Expr.Postfix): Any {
+        return when (expr.operator) {
+            PostIncrement -> when (val e = visit(expr.expr)) {
                 is Ref -> e.postIncrement()
                 
-                else   -> invalidUnaryOperandError(e, expr.op, expr.loc)
+                else   -> invalidPostfixOperandError(e, expr.operator, expr.loc)
             }
             
-            Token.Type.POD -> when (val e = visit(expr.expr)) {
+            PostDecrement -> when (val e = visit(expr.expr)) {
                 is Ref -> e.postDecrement()
                 
-                else   -> invalidUnaryOperandError(e, expr.op, expr.loc)
+                else   -> invalidPostfixOperandError(e, expr.operator, expr.loc)
             }
             
-            Token.Type.FLT -> when (val e = visit(expr.expr).fromRef()) {
+            PostNarrowed  -> when (val e = visit(expr.expr)) {
+                is Ref -> e.postNarrow()
+                
+                else   -> invalidPostfixOperandError(e, expr.operator, expr.loc)
+            }
+            
+            PostToggled   -> when (val e = visit(expr.expr)) {
+                is Ref -> e.postToggle()
+                
+                else   -> invalidPostfixOperandError(e, expr.operator, expr.loc)
+            }
+            
+            PostInverted  -> when (val e = visit(expr.expr)) {
+                is Ref -> e.postInvert()
+                
+                else   -> invalidPostfixOperandError(e, expr.operator, expr.loc)
+            }
+            
+            FloatCast     -> when (val e = visit(expr.expr).fromRef()) {
                 is MNumber -> MNumber.Float(e.toFloat())
                 
                 is MArray  -> for (ref in e) {
                     ref.value = MNumber.Float(ref.value.toFloat())
                 }
                 
-                else       -> invalidUnaryOperandError(e, expr.op, expr.loc)
+                else       -> invalidPostfixOperandError(e, expr.operator, expr.loc)
             }
             
-            Token.Type.INT -> when (val e = visit(expr.expr).fromRef()) {
+            IntegerCast   -> when (val e = visit(expr.expr).fromRef()) {
                 is MNumber -> MNumber.Int(e.toInt())
                 
                 is MArray  -> for (ref in e) {
                     ref.value = MNumber.Int(ref.value.toInt())
                 }
                 
-                else       -> invalidUnaryOperandError(e, expr.op, expr.loc)
+                else       -> invalidPostfixOperandError(e, expr.operator, expr.loc)
             }
             
-            Token.Type.STR -> when (val e = visit(expr.expr).fromRef()) {
+            StringCast    -> when (val e = visit(expr.expr).fromRef()) {
                 is MNumber -> e.toString().toMArray()
                 
-                else       -> invalidUnaryOperandError(e, expr.op, expr.loc)
+                else       -> invalidPostfixOperandError(e, expr.operator, expr.loc)
             }
-            
-            else           -> unexpectedError("BROKEN UNARY OPERATOR '${expr.op}'!")
         }
     }
     
     override fun visitBinaryExpr(expr: Expr.Binary): Any {
-        return when (expr.op) {
-            Token.Type.ADD -> when (val l = visit(expr.left).fromRef()) {
+        return when (expr.operator) {
+            Add                -> when (val l = visit(expr.left).fromRef()) {
                 is MNumber -> when (val r = visit(expr.right).fromRef()) {
                     is MNumber -> l + r
                     
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
                 }
                 
                 is MArray  -> when (val r = visit(expr.right).fromRef()) {
@@ -145,47 +198,47 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
                         it
                     } + r.toMutableList())
                     
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
                 }
                 
-                else       -> invalidLeftOperandError(l, expr.op, expr.loc)
+                else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
             }
             
-            Token.Type.SUB -> when (val l = visit(expr.left).fromRef()) {
+            Subtract           -> when (val l = visit(expr.left).fromRef()) {
                 is MNumber -> when (val r = visit(expr.right).fromRef()) {
                     is MNumber -> l - r
                     
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
                 }
                 
-                else       -> invalidLeftOperandError(l, expr.op, expr.loc)
+                else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
             }
             
-            Token.Type.MUL -> when (val l = visit(expr.left).fromRef()) {
+            Multiply           -> when (val l = visit(expr.left).fromRef()) {
                 is MNumber -> when (val r = visit(expr.right).fromRef()) {
                     is MNumber -> l * r
                     
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
                 }
                 
-                else       -> invalidLeftOperandError(l, expr.op, expr.loc)
+                else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
             }
             
-            Token.Type.DIV -> when (val l = visit(expr.left).fromRef()) {
+            Divide             -> when (val l = visit(expr.left).fromRef()) {
                 is MNumber -> when (val r = visit(expr.right).fromRef()) {
                     is MNumber -> l / r
                     
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
                 }
                 
-                else       -> invalidLeftOperandError(l, expr.op, expr.loc)
+                else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
             }
             
-            Token.Type.REM -> when (val l = visit(expr.left).fromRef()) {
+            Modulus            -> when (val l = visit(expr.left).fromRef()) {
                 is MNumber -> when (val r = visit(expr.right).fromRef()) {
                     is MNumber -> l % r
                     
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
                 }
                 
                 is MArray  -> when (val r = visit(expr.right).fromRef()) {
@@ -211,77 +264,109 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
                         l
                     }
                     
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
                 }
                 
-                else       -> invalidLeftOperandError(l, expr.op, expr.loc)
+                else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
             }
             
-            Token.Type.LSS -> when (val l = visit(expr.left).fromRef()) {
+            Less               -> when (val l = visit(expr.left).fromRef()) {
                 is MNumber -> when (val r = visit(expr.right).fromRef()) {
                     is MNumber -> l lss r
                     
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
                 }
                 
-                else       -> invalidLeftOperandError(l, expr.op, expr.loc)
+                else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
             }
             
-            Token.Type.LEQ -> when (val l = visit(expr.left).fromRef()) {
+            LessEqual          -> when (val l = visit(expr.left).fromRef()) {
                 is MNumber -> when (val r = visit(expr.right).fromRef()) {
                     is MNumber -> l leq r
                     
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
                 }
                 
-                else       -> invalidLeftOperandError(l, expr.op, expr.loc)
+                else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
             }
             
-            Token.Type.GRT -> when (val l = visit(expr.left).fromRef()) {
+            Greater            -> when (val l = visit(expr.left).fromRef()) {
                 is MNumber -> when (val r = visit(expr.right).fromRef()) {
                     is MNumber -> l grt r
                     
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
                 }
                 
-                else       -> invalidLeftOperandError(l, expr.op, expr.loc)
+                else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
             }
             
-            Token.Type.GEQ -> when (val l = visit(expr.left).fromRef()) {
+            GreaterEqual       -> when (val l = visit(expr.left).fromRef()) {
                 is MNumber -> when (val r = visit(expr.right).fromRef()) {
                     is MNumber -> l geq r
                     
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
                 }
                 
-                else       -> invalidLeftOperandError(l, expr.op, expr.loc)
+                else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
             }
             
-            Token.Type.EQU -> when (val l = visit(expr.left).fromRef()) {
+            Equal              -> when (val l = visit(expr.left).fromRef()) {
                 is MNumber -> when (val r = visit(expr.right).fromRef()) {
                     is MNumber -> l equ r
                     
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
                 }
                 
-                else       -> invalidLeftOperandError(l, expr.op, expr.loc)
+                else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
             }
             
-            Token.Type.NEQ -> when (val l = visit(expr.left).fromRef()) {
+            NotEqual           -> when (val l = visit(expr.left).fromRef()) {
                 is MNumber -> when (val r = visit(expr.right).fromRef()) {
                     is MNumber -> l neq r
                     
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
                 }
                 
-                else       -> invalidLeftOperandError(l, expr.op, expr.loc)
+                else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
             }
             
-            Token.Type.AND -> when (val l = visit(expr.left).fromRef()) {
+            And                -> when (val l = visit(expr.left).fromRef()) {
                 is MNumber -> when (val r = visit(expr.right).fromRef()) {
                     is MNumber -> l and r
                     
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
+                }
+                
+                else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
+            }
+            
+            Or                 -> when (val l = visit(expr.left).fromRef()) {
+                is MNumber -> when (val r = visit(expr.right).fromRef()) {
+                    is MNumber -> l orr r
+                    
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
+                }
+                
+                else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
+            }
+            
+            Xor                -> when (val l = visit(expr.left).fromRef()) {
+                is MNumber -> when (val r = visit(expr.right).fromRef()) {
+                    is MNumber -> l xor r
+                    
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
+                }
+                
+                else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
+            }
+            
+            BitAnd             -> when (val l = visit(expr.left).fromRef()) {
+                is MNumber -> when (val r = visit(expr.right).fromRef()) {
+                    is MNumber -> l bnd r
+                    
+                    is MArray  -> MArray(mutableListOf(Ref(l)) + r.toMutableList())
+                    
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
                 }
                 
                 is MArray  -> when (val r = visit(expr.right).fromRef()) {
@@ -289,89 +374,59 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
                     
                     is MArray  -> MArray(l.toMutableList() + r.toMutableList())
                     
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
                 }
                 
-                else       -> invalidLeftOperandError(l, expr.op, expr.loc)
+                else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
             }
             
-            Token.Type.ORR -> when (val l = visit(expr.left).fromRef()) {
-                is MNumber -> when (val r = visit(expr.right).fromRef()) {
-                    is MNumber -> l orr r
-                    
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
-                }
-                
-                else       -> invalidLeftOperandError(l, expr.op, expr.loc)
-            }
-            
-            Token.Type.XOR -> when (val l = visit(expr.left).fromRef()) {
-                is MNumber -> when (val r = visit(expr.right).fromRef()) {
-                    is MNumber -> l xor r
-                    
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
-                }
-                
-                else       -> invalidLeftOperandError(l, expr.op, expr.loc)
-            }
-            
-            Token.Type.BND -> when (val l = visit(expr.left).fromRef()) {
-                is MNumber -> when (val r = visit(expr.right).fromRef()) {
-                    is MNumber -> l bnd r
-                    
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
-                }
-                
-                else       -> invalidLeftOperandError(l, expr.op, expr.loc)
-            }
-            
-            Token.Type.BOR -> when (val l = visit(expr.left).fromRef()) {
+            BitOr              -> when (val l = visit(expr.left).fromRef()) {
                 is MNumber -> when (val r = visit(expr.right).fromRef()) {
                     is MNumber -> l bor r
                     
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
                 }
                 
-                else       -> invalidLeftOperandError(l, expr.op, expr.loc)
+                else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
             }
             
-            Token.Type.SHL -> when (val l = visit(expr.left).fromRef()) {
+            ShiftLeft          -> when (val l = visit(expr.left).fromRef()) {
                 is MNumber -> when (val r = visit(expr.right).fromRef()) {
                     is MNumber -> l shl r
                     
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
                 }
                 
-                else       -> invalidLeftOperandError(l, expr.op, expr.loc)
+                else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
             }
             
-            Token.Type.SHR -> when (val l = visit(expr.left).fromRef()) {
+            ShiftRight         -> when (val l = visit(expr.left).fromRef()) {
                 is MNumber -> when (val r = visit(expr.right).fromRef()) {
                     is MNumber -> l shr r
                     
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
                 }
                 
-                else       -> invalidLeftOperandError(l, expr.op, expr.loc)
+                else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
             }
             
-            Token.Type.USR -> when (val l = visit(expr.left).fromRef()) {
+            UnsignedShiftRight -> when (val l = visit(expr.left).fromRef()) {
                 is MNumber -> when (val r = visit(expr.right).fromRef()) {
                     is MNumber -> l usr r
                     
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
                 }
                 
-                else       -> invalidLeftOperandError(l, expr.op, expr.loc)
+                else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
             }
             
-            Token.Type.ASN -> when (val l = visit(expr.left)) {
+            Assign             -> when (val l = visit(expr.left)) {
                 is Ref    -> when (val r = visit(expr.right).fromRef()) {
                     is MNumber -> l.assign(r)
                     
                     is MArray  -> l.assign(r[0].value)
                     
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
                 }
                 
                 is MArray -> when (val r = visit(expr.right).fromRef()) {
@@ -385,13 +440,11 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
                         }
                     }
                     
-                    else       -> invalidRightOperandError(r, expr.op, expr.loc)
+                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
                 }
                 
-                else      -> invalidLeftOperandError(l, expr.op, expr.loc)
+                else      -> invalidLeftOperandError(l, expr.operator, expr.loc)
             }
-            
-            else           -> unexpectedError("BROKEN BINARY OPERATOR '${expr.op}'!")
         }
     }
     
@@ -440,19 +493,19 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
         }
         
         if (start < 0) {
-            start = config.size - start
+            start += config.size
         }
         
         var end = when (val e = visit(expr.end).fromRef()) {
             is MNumber -> e.toFloat()
             
-            is Unit    -> memory.peek().size - 1F
+            is Unit    -> memory.peek().size.toFloat()
             
             else       -> invalidRangeExprError("end", expr.end.loc)
         }
         
         if (end < 0) {
-            end = config.size - end
+            end += config.size
         }
         
         val step = when (val e = visit(expr.step).fromRef()) {
@@ -463,9 +516,18 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
             else       -> invalidRangeExprError("step", expr.step.loc)
         }
         
+        if (step < 0 && start < end) {
+            val temp = start
+            start = end - 1
+            end = temp - 1
+        }
+        
         var i = start
         
-        while (i <= end) {
+        while ((i - end).sign == -step.sign) {
+            println((i - end).sign)
+            println(step.sign)
+            
             list.add(memory.peek()[i.toInt()])
             
             i += step
@@ -486,7 +548,7 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
         }
         
         if (start < 0) {
-            start = config.size - start
+            start += config.size
         }
         
         val count = when (val e = visit(expr.count).fromRef()) {
@@ -516,18 +578,14 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
         return MArray(list)
     }
     
-    override fun visitDynamicLiteralExpr(expr: Expr.DynamicLiteral): Any = when (expr.char) {
-        'A'  -> config.args.toMArray()
+    override fun visitDynamicLiteralExpr(expr: Expr.DynamicLiteral): Any = when (expr.name) {
+        A -> config.args.toMArray()
         
-        'C'  -> counter
+        C -> counter
         
-        'L'  -> MNumber.Float()
+        R -> MNumber.Float(Math.random().toFloat())
         
-        'R'  -> MNumber.Float(Math.random().toFloat())
-        
-        'S'  -> MNumber.Float(config.size.toFloat())
-        
-        else -> unexpectedError("Broken dynamic literal!")
+        S -> MNumber.Float(config.size.toFloat())
     }
     
     override fun visitNoneStmt(stmt: Stmt.None) = Unit
@@ -706,9 +764,13 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
     }
     
     override fun visitSingleAssignStmt(stmt: Stmt.SingleAssign) {
-        val index =
+        var index =
             (visit(stmt.single.index).fromRef() as? MNumber
                 ?: invalidMemoryIndexError(stmt.single.index.loc)).toInt()
+        
+        if (index < 0) {
+            index += config.size
+        }
         
         when (val expr = visit(stmt.expr).fromRef()) {
             is MNumber -> memory.peek()[index].value = expr
@@ -718,8 +780,8 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
     }
     
     override fun visitFixedRangeAssignStmt(stmt: Stmt.FixedRangeAssign) {
-        var start = when (val expr = visit(stmt.range.start).fromRef()) {
-            is MNumber -> expr.toFloat()
+        var start = when (val e = visit(stmt.range.start).fromRef()) {
+            is MNumber -> e.toFloat()
             
             is Unit    -> 0F
             
@@ -727,19 +789,79 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
         }
         
         if (start < 0) {
-            start = config.size - start
+            start += config.size
         }
         
-        var end = when (val expr = visit(stmt.range.end).fromRef()) {
-            is MNumber -> expr.toFloat()
+        var end = when (val e = visit(stmt.range.end).fromRef()) {
+            is MNumber -> e.toFloat()
             
-            is Unit    -> config.size.toFloat() - 1
+            is Unit    -> memory.peek().size.toFloat()
             
             else       -> invalidRangeExprError("end", stmt.range.end.loc)
         }
         
         if (end < 0) {
-            end = config.size - end
+            end += config.size
+        }
+        
+        val step = when (val e = visit(stmt.range.step).fromRef()) {
+            is MNumber -> e.toFloat()
+            
+            is Unit    -> 1F
+            
+            else       -> invalidRangeExprError("step", stmt.range.step.loc)
+        }
+        
+        if (step < 0 && start < end) {
+            val temp = start
+            start = end - 1
+            end = temp - 1
+        }
+        
+        when (val expr = visit(stmt.expr).fromRef()) {
+            is MNumber -> {
+                var memoryIndex = start
+                
+                while ((memoryIndex - end).sign == -step.sign) {
+                    memory.peek()[memoryIndex.toInt()].value = expr
+                    
+                    memoryIndex += step
+                }
+            }
+            
+            is MArray  -> {
+                var memoryIndex = start
+                
+                var arrayIndex = 0
+                
+                while ((memoryIndex - end).sign == -step.sign && arrayIndex < expr.size) {
+                    memory.peek()[memoryIndex.toInt()].value = expr[arrayIndex].value
+                    
+                    memoryIndex += step
+                    
+                    arrayIndex++
+                }
+            }
+        }
+    }
+    
+    override fun visitRelativeRangeAssignStmt(stmt: Stmt.RelativeRangeAssign) {
+        var start = when (val e = visit(stmt.range.start).fromRef()) {
+            is MNumber -> e.toFloat()
+            
+            is Unit    -> 0F
+            
+            else       -> invalidRangeExprError("start", stmt.range.start.loc)
+        }
+        
+        if (start < 0) {
+            start += config.size
+        }
+        
+        val count = when (val expr = visit(stmt.range.count).fromRef()) {
+            is MNumber -> expr.toFloat()
+            
+            else       -> invalidRangeExprError("count", stmt.range.count.loc)
         }
         
         val step = when (val expr = visit(stmt.range.step).fromRef()) {
@@ -754,7 +876,7 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
             is MNumber -> {
                 var memoryIndex = start
                 
-                while (memoryIndex <= end) {
+                while (memoryIndex < start + count) {
                     memory.peek()[memoryIndex.toInt()].value = expr
                     
                     memoryIndex += step
@@ -766,58 +888,8 @@ class Runtime(val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<
                 
                 var arrayIndex = 0
                 
-                while (memoryIndex <= end && arrayIndex < expr.size) {
-                    memory.peek()[memoryIndex.toInt()].value = expr[arrayIndex].value
-                    
-                    memoryIndex += step
-                    
-                    arrayIndex++
-                }
-            }
-        }
-    }
-    
-    override fun visitRelativeRangeAssignStmt(stmt: Stmt.RelativeRangeAssign) {
-        val start = when (val expr = visit(stmt.range.start).fromRef()) {
-            is MNumber -> expr.toInt()
-            
-            is Unit    -> 0
-            
-            else       -> invalidRangeExprError("start", stmt.range.start.loc)
-        }
-        
-        val count = when (val expr = visit(stmt.range.count).fromRef()) {
-            is MNumber -> expr.toInt()
-            
-            else       -> invalidRangeExprError("count", stmt.range.count.loc)
-        }
-        
-        val step = when (val expr = visit(stmt.range.step).fromRef()) {
-            is MNumber -> expr.toInt()
-            
-            is Unit    -> 1
-            
-            else       -> invalidRangeExprError("step", stmt.range.step.loc)
-        }
-        
-        when (val expr = visit(stmt.expr).fromRef()) {
-            is MNumber -> {
-                var memoryIndex = start
-                
-                while (memoryIndex < start + count) {
-                    memory.peek()[memoryIndex].value = expr
-                    
-                    memoryIndex += step
-                }
-            }
-            
-            is MArray  -> {
-                var memoryIndex = start
-                
-                var arrayIndex = 0
-                
                 while (memoryIndex < start + count && arrayIndex < expr.size) {
-                    memory.peek()[memoryIndex].value = expr[arrayIndex].value
+                    memory.peek()[memoryIndex.toInt()].value = expr[arrayIndex].value
                     
                     memoryIndex += step
                     

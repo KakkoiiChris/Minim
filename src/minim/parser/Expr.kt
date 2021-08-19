@@ -1,7 +1,6 @@
 package minim.parser
 
 import minim.lexer.Location
-import minim.lexer.Token
 
 sealed class Expr(val loc: Location) {
     abstract fun <X> accept(visitor: Visitor<X>): X
@@ -12,7 +11,9 @@ sealed class Expr(val loc: Location) {
         
         fun visitNoneExpr(expr: None): X
         
-        fun visitUnaryExpr(expr: Unary): X
+        fun visitPrefixExpr(expr: Prefix): X
+        
+        fun visitPostfixExpr(expr: Postfix): X
         
         fun visitBinaryExpr(expr: Binary): X
         
@@ -36,12 +37,84 @@ sealed class Expr(val loc: Location) {
             visitor.visitNoneExpr(this)
     }
     
-    class Unary(loc: Location, val op: Token.Type, val expr: Expr) : Expr(loc) {
+    class Prefix(loc: Location, val operator: Operator, val expr: Expr) : Expr(loc) {
+        enum class Operator(private val rep: String) {
+            Increment("++"),
+            Decrement("--"),
+            Narrowed("??"),
+            Toggled("!!"),
+            Inverted("~~"),
+            Negative("-"),
+            Narrow("?"),
+            Not("!"),
+            Invert("~");
+            
+            companion object {
+                operator fun get(rep: String) =
+                    values().find { it.rep == rep }!!
+            }
+            
+            override fun toString() = rep
+        }
+        
         override fun <X> accept(visitor: Visitor<X>) =
-            visitor.visitUnaryExpr(this)
+            visitor.visitPrefixExpr(this)
     }
     
-    class Binary(loc: Location, val op: Token.Type, val left: Expr, val right: Expr) : Expr(loc) {
+    class Postfix(loc: Location, val operator: Operator, val expr: Expr) : Expr(loc) {
+        enum class Operator(private val rep: String) {
+            Increment("++"),
+            Decrement("--"),
+            Narrowed("??"),
+            Toggled("!!"),
+            Inverted("~~"),
+            IntegerCast("i"),
+            FloatCast("f"),
+            StringCast("s");
+            
+            companion object {
+                operator fun get(rep: String) =
+                    values().find { it.rep == rep }!!
+            }
+            
+            override fun toString() = rep
+        }
+        
+        override fun <X> accept(visitor: Visitor<X>) =
+            visitor.visitPostfixExpr(this)
+    }
+    
+    class Binary(loc: Location, val operator: Operator, val left: Expr, val right: Expr) : Expr(loc) {
+        enum class Operator(private val rep: String) {
+            Multiply("*"),
+            Divide("/"),
+            Modulus("%"),
+            Add("+"),
+            Subtract("-"),
+            ShiftLeft("<<"),
+            ShiftRight(">>"),
+            UnsignedShiftRight(">>>"),
+            Less("<"),
+            LessEqual("<="),
+            Greater(">"),
+            GreaterEqual(">="),
+            Equal("=="),
+            NotEqual("<>"),
+            BitAnd("&"),
+            Xor("^"),
+            BitOr("|"),
+            And("&&"),
+            Or("||"),
+            Assign("=");
+            
+            companion object {
+                operator fun get(rep: String) =
+                    values().find { it.rep == rep }!!
+            }
+            
+            override fun toString() = rep
+        }
+        
         override fun <X> accept(visitor: Visitor<X>) =
             visitor.visitBinaryExpr(this)
     }
@@ -76,7 +149,19 @@ sealed class Expr(val loc: Location) {
             visitor.visitRelativeRangeExpr(this)
     }
     
-    class DynamicLiteral(loc: Location, val char: Char) : Expr(loc) {
+    class DynamicLiteral(loc: Location, val name: Name) : Expr(loc) {
+        enum class Name {
+            A, C, R, S;
+            
+            companion object {
+                operator fun contains(char: Char) =
+                    get(char) != null
+                
+                operator fun get(char: Char) =
+                    values().find { it.name == "$char" }
+            }
+        }
+        
         override fun <X> accept(visitor: Visitor<X>) =
             visitor.visitDynamicLiteralExpr(this)
     }
