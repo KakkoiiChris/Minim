@@ -1,118 +1,51 @@
-; Conway's Game of Life \
-  Christian Alexander   \
-  08/13/2021
+; FizzBuzz            \
+  Christian Alexander \
+  07/23/2021
+  
+[0] = 1i. ; Counter
 
-; Memory Space Allocation            \
-  CONSTANTS                          \
-  0      - Board size                \
-  1      - Board allocation          \
-  2 -> 3 - Print characters          \
-  VARIABLES                          \
-  4 - Board pointer                  \
-  5 - General index, neighbor count  \
-  6 - Board row, board character     \
-  7 - Board col, wait character      \
-  8 - Offset row                     \
-  9 - Offset col                     \
-  10 - Actual row                    \
-  11 - Actual col                    \
-  ARRAYS                             \
-  12 -> 12 + [1]           - Board A \
-  12 + [1] -> 12 + 2 * [1] - Board B
+[3 :] = "FizzBuzz".
 
-; Initialize constants
-[0] = 40.
-[1] = [0] * [0].
-[2 :] = " █".
+_> 1.
+    [1] = 3.   ; Start
+    [2] = [1]. ; End
 
-; Initialize Board A with randomly alive cells
-_> 'I'.
-    [12 + [5]++] = R < 0.5.
-    _^ [5] == [1].
-_< 'I'.
+    _^ !([0] % 3 && [0] % 5).
+        _< '#'.
 
-; Game loop
-_> 'L'.
-    [5] = 0.
+    _^ !([0] % 3).
+        _< 'F'.
     
-    ; Print board
+    [2] = [2] + 4.
+    
+    _> 'F'.
+    
+    _^ [1] <> [2].
+        [2] = [1] = [1] + 4.
+    
+    _^ !([0] % 5).
+        _< 'B'.
+    
+    [2] = [2] + 4.
+    
     _> 'B'.
-        [6] = [2 + ?[12 + ([4] * [1]) + [5]++]].
-        $< [6].
-        $< [6].
-        
-        _^ [5] % [0].
-            $< '\n'.
-            
-        _^ [5] == [1].
-    _< 'B'.
     
-    $< '\n'.
+    _> 3.
+        $< [[1]++].
+        _< ([1] <> [2]) + 2.
+    _> 2.
     
-    ; Get next generation
-    [6] = 0.
+    _< ' '.
     
-    _> 'R'.
-        [7] = 0.
-        
-        _> 'C'.
-            [5] = 0.
-        
-            [8] = -1.
-            
-            _> 'Y'.
-                [9] = -1.
-                
-                _> 'X'.
-                    _^ !([8] == [9] && [9] == 0).
-                        _< '!'.
-                
-                    [10] = [7] + [9].
-                    
-                    _^ [10] >= 0 && [10] < [0].
-                        _< '!'.
-                    
-                    [11] = [6] + [8].
-                    
-                    _^ [11] >= 0 && [11] < [0].
-                        _< '!'.
-                    
-                    [5] += [12 + ([4] * [1]) + ([10] + [11] * [0])].
-                    
-                    _> '!'.
-                    
-                    _^ ++[9] > 1.
-                _< 'X'.
-                
-                _^ ++[8] > 1.
-            _< 'Y'.
-            
-            [10] = 12 + ([4] * [1]) + ([7] + [6] * [0]).
-            [11] = 12 + (![4] * [1]) + ([7] + [6] * [0]).
-            
-            [[11]] = [[10]].
-            
-            _^ !([[10]] && ([5] < 2 || [5] > 3)).
-                [[11]] = F.
-            
-            _^ !(![[10]] && [5] == 3).
-                [[11]] = T.
-            
-            _^ !(++[7] % [0]).
-        _< 'C'.
-        
-        [7] = 0.
-        
-        _^ !(++[6] % [0]).
-    _< 'R'.
+    _> '#'.
     
-    ; Toggle current board
-    !![4].
+    #< [0].
     
-    ; Wait until enter is pressed
-    $> [7].
-    $!.
+    _> ' '.
     
-    ; Break loop if non-empty input provided
-    _^ [7].
-_< 'L'.
+    $< ' '.
+    
+    _< ?([0]++ - 100).
+_> 0.
+
+$< '\n'.

@@ -335,7 +335,10 @@ class Runtime(private val config: Config, private val stmts: List<Stmt>) : Expr.
                 
                 if (l is MNumber) {
                     if (!l.toBoolean()) {
-                        return false
+                        return when (l) {
+                            is MNumber.Float -> MNumber.Float(0F)
+                            is MNumber.Int   -> MNumber.Int(0)
+                        }
                     }
                 }
                 else {
@@ -345,7 +348,10 @@ class Runtime(private val config: Config, private val stmts: List<Stmt>) : Expr.
                 val r = visit(expr.right).fromRef()
                 
                 if (r is MNumber) {
-                    r.toBoolean()
+                    return when (r) {
+                        is MNumber.Float -> MNumber.Float(r.toBoolean().toFloat())
+                        is MNumber.Int   -> MNumber.Int(r.toBoolean().toInt())
+                    }
                 }
                 else {
                     invalidRightOperandError(r, expr.operator, expr.loc)
@@ -354,20 +360,26 @@ class Runtime(private val config: Config, private val stmts: List<Stmt>) : Expr.
             
             Or                 -> {
                 val l = visit(expr.left).fromRef()
-    
+                
                 if (l is MNumber) {
                     if (l.toBoolean()) {
-                        return true
+                        return when (l) {
+                            is MNumber.Float -> MNumber.Float(1F)
+                            is MNumber.Int   -> MNumber.Int(1)
+                        }
                     }
                 }
                 else {
                     invalidLeftOperandError(l, expr.operator, expr.loc)
                 }
-    
+                
                 val r = visit(expr.right).fromRef()
-    
+                
                 if (r is MNumber) {
-                    r.toBoolean()
+                    return when (r) {
+                        is MNumber.Float -> MNumber.Float(r.toBoolean().toFloat())
+                        is MNumber.Int   -> MNumber.Int(r.toBoolean().toInt())
+                    }
                 }
                 else {
                     invalidRightOperandError(r, expr.operator, expr.loc)
@@ -717,15 +729,15 @@ class Runtime(private val config: Config, private val stmts: List<Stmt>) : Expr.
     
     override fun visitGosubStmt(stmt: Stmt.Gosub) {
         val id = (visit(stmt.id).fromRef() as? MNumber ?: invalidStatementArgumentError(stmt.id.loc)).toFloat()
-    
+        
         var pos = labels[id] ?: findLabel(id)
-    
+        
         if (pos == null) {
             pos = when (val fallback = visit(stmt.fallback).fromRef()) {
                 is MNumber -> labels[fallback.toFloat()] ?: findLabel(fallback.toFloat())
-            
+                
                 is Unit    -> null
-            
+                
                 else       -> invalidStatementArgumentError(stmt.fallback.loc)
             }
         }
