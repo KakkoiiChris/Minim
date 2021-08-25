@@ -18,7 +18,7 @@ sealed class Stmt(val loc: Location) {
         fun visitTextInStmt(stmt: TextIn): X
         
         fun visitTextOutStmt(stmt: TextOut): X
-    
+        
         fun visitTextFlushStmt(stmt: TextFlush): X
         
         fun visitLabelStmt(stmt: Label): X
@@ -34,7 +34,7 @@ sealed class Stmt(val loc: Location) {
         fun visitSystemArgStmt(stmt: SystemArg): X
         
         fun visitSystemCallStmt(stmt: SystemCall): X
-    
+        
         fun visitSystemFlushStmt(stmt: SystemFlush): X
         
         fun visitMemoryPushStmt(stmt: MemoryPush): X
@@ -44,7 +44,7 @@ sealed class Stmt(val loc: Location) {
         fun visitMemoryInStmt(stmt: MemoryIn): X
         
         fun visitMemoryOutStmt(stmt: MemoryOut): X
-    
+        
         fun visitMemoryFlushStmt(stmt: MemoryFlush): X
         
         fun visitSingleAssignStmt(stmt: SingleAssign): X
@@ -81,7 +81,7 @@ sealed class Stmt(val loc: Location) {
             visitor.visitTextOutStmt(this)
     }
     
-    class TextFlush(loc: Location):Stmt(loc){
+    class TextFlush(loc: Location) : Stmt(loc) {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitTextFlushStmt(this)
     }
@@ -91,7 +91,7 @@ sealed class Stmt(val loc: Location) {
             visitor.visitLabelStmt(this)
     }
     
-    class Goto(loc: Location, val id: Expr) : Stmt(loc) {
+    class Goto(loc: Location, val id: Expr, val fallback: Expr) : Stmt(loc) {
         override fun <X> accept(visitor: Visitor<X>) =
             visitor.visitGotoStmt(this)
     }
@@ -101,7 +101,7 @@ sealed class Stmt(val loc: Location) {
             visitor.visitJumpStmt(this)
     }
     
-    class Gosub(loc: Location, val id: Expr) : Stmt(loc) {
+    class Gosub(loc: Location, val id: Expr, val fallback: Expr) : Stmt(loc) {
         override fun <X> accept(visitor: Visitor<X>) =
             visitor.visitGosubStmt(this)
     }
@@ -121,7 +121,7 @@ sealed class Stmt(val loc: Location) {
             visitor.visitSystemCallStmt(this)
     }
     
-    class SystemFlush(loc: Location):Stmt(loc){
+    class SystemFlush(loc: Location) : Stmt(loc) {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitSystemFlushStmt(this)
     }
@@ -146,7 +146,7 @@ sealed class Stmt(val loc: Location) {
             visitor.visitMemoryOutStmt(this)
     }
     
-    class MemoryFlush(loc: Location):Stmt(loc){
+    class MemoryFlush(loc: Location) : Stmt(loc) {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitMemoryFlushStmt(this)
     }

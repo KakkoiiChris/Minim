@@ -330,24 +330,48 @@ class Runtime(private val config: Config, private val stmts: List<Stmt>) : Expr.
                 else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
             }
             
-            And                -> when (val l = visit(expr.left).fromRef()) {
-                is MNumber -> when (val r = visit(expr.right).fromRef()) {
-                    is MNumber -> l and r
-                    
-                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
+            And                -> {
+                val l = visit(expr.left).fromRef()
+                
+                if (l is MNumber) {
+                    if (!l.toBoolean()) {
+                        return false
+                    }
+                }
+                else {
+                    invalidLeftOperandError(l, expr.operator, expr.loc)
                 }
                 
-                else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
+                val r = visit(expr.right).fromRef()
+                
+                if (r is MNumber) {
+                    r.toBoolean()
+                }
+                else {
+                    invalidRightOperandError(r, expr.operator, expr.loc)
+                }
             }
             
-            Or                 -> when (val l = visit(expr.left).fromRef()) {
-                is MNumber -> when (val r = visit(expr.right).fromRef()) {
-                    is MNumber -> l orr r
-                    
-                    else       -> invalidRightOperandError(r, expr.operator, expr.loc)
+            Or                 -> {
+                val l = visit(expr.left).fromRef()
+    
+                if (l is MNumber) {
+                    if (l.toBoolean()) {
+                        return true
+                    }
                 }
-                
-                else       -> invalidLeftOperandError(l, expr.operator, expr.loc)
+                else {
+                    invalidLeftOperandError(l, expr.operator, expr.loc)
+                }
+    
+                val r = visit(expr.right).fromRef()
+    
+                if (r is MNumber) {
+                    r.toBoolean()
+                }
+                else {
+                    invalidRightOperandError(r, expr.operator, expr.loc)
+                }
             }
             
             Xor                -> when (val l = visit(expr.left).fromRef()) {
@@ -650,7 +674,19 @@ class Runtime(private val config: Config, private val stmts: List<Stmt>) : Expr.
     override fun visitGotoStmt(stmt: Stmt.Goto) {
         val id = (visit(stmt.id).fromRef() as? MNumber ?: invalidStatementArgumentError(stmt.id.loc)).toFloat()
         
-        counter.set(labels[id] ?: findLabel(id) ?: counter.value.toInt())
+        var pos = labels[id] ?: findLabel(id)
+        
+        if (pos == null) {
+            pos = when (val fallback = visit(stmt.fallback).fromRef()) {
+                is MNumber -> labels[fallback.toFloat()] ?: findLabel(fallback.toFloat())
+                
+                is Unit    -> null
+                
+                else       -> invalidStatementArgumentError(stmt.fallback.loc)
+            }
+        }
+        
+        counter.set(pos ?: counter.value.toInt())
     }
     
     private fun findLabel(id: Float): Int? {
@@ -681,10 +717,22 @@ class Runtime(private val config: Config, private val stmts: List<Stmt>) : Expr.
     
     override fun visitGosubStmt(stmt: Stmt.Gosub) {
         val id = (visit(stmt.id).fromRef() as? MNumber ?: invalidStatementArgumentError(stmt.id.loc)).toFloat()
+    
+        var pos = labels[id] ?: findLabel(id)
+    
+        if (pos == null) {
+            pos = when (val fallback = visit(stmt.fallback).fromRef()) {
+                is MNumber -> labels[fallback.toFloat()] ?: findLabel(fallback.toFloat())
+            
+                is Unit    -> null
+            
+                else       -> invalidStatementArgumentError(stmt.fallback.loc)
+            }
+        }
         
         callStack.push(counter.value.toInt())
         
-        counter.set(labels[id] ?: findLabel(id) ?: counter.value.toInt())
+        counter.set(pos ?: counter.value.toInt())
     }
     
     override fun visitReturnStmt(stmt: Stmt.Return) {

@@ -43,10 +43,6 @@ sealed interface MNumber {
     
     infix fun bor(x: MNumber): MNumber
     
-    infix fun and(x: MNumber): MNumber
-    
-    infix fun orr(x: MNumber): MNumber
-    
     infix fun shl(x: MNumber): MNumber
     
     infix fun shr(x: MNumber): MNumber
@@ -142,16 +138,6 @@ sealed interface MNumber {
         override fun bor(x: MNumber) = when (x) {
             is Float -> Float((value.toInt() or x.value.toInt()).toFloat())
             is Int   -> Float((value.toInt() or x.value).toFloat())
-        }
-        
-        override fun and(x: MNumber) = when (x) {
-            is Float -> Float((value.toBoolean() && x.value.toBoolean()).toFloat())
-            is Int   -> Float((value.toBoolean() && x.value.toBoolean()).toFloat())
-        }
-        
-        override fun orr(x: MNumber) = when (x) {
-            is Float -> Float((value.toBoolean() || x.value.toBoolean()).toFloat())
-            is Int   -> Float((value.toBoolean() || x.value.toBoolean()).toFloat())
         }
         
         override infix fun shl(x: MNumber) = when (x) {
@@ -266,16 +252,6 @@ sealed interface MNumber {
         override fun bor(x: MNumber) = when (x) {
             is Float -> Int((value or x.value.toInt()))
             is Int   -> Int(value or x.value)
-        }
-        
-        override fun and(x: MNumber) = when (x) {
-            is Float -> Int((value.toBoolean() && x.value.toBoolean()).toInt())
-            is Int   -> Int((value.toBoolean() && x.value.toBoolean()).toInt())
-        }
-        
-        override fun orr(x: MNumber) = when (x) {
-            is Float -> Int((value.toBoolean() || x.value.toBoolean()).toInt())
-            is Int   -> Int((value.toBoolean() || x.value.toBoolean()).toInt())
         }
         
         override infix fun shl(x: MNumber) = when (x) {

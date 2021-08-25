@@ -1,6 +1,7 @@
 package minim.parser
 
 import minim.lexer.Location
+import minim.lexer.Token
 
 sealed class Expr(val loc: Location) {
     abstract fun <X> accept(visitor: Visitor<X>): X
@@ -38,23 +39,23 @@ sealed class Expr(val loc: Location) {
     }
     
     class Prefix(loc: Location, val operator: Operator, val expr: Expr) : Expr(loc) {
-        enum class Operator(private val rep: String) {
-            Increment("++"),
-            Decrement("--"),
-            Narrowed("??"),
-            Toggled("!!"),
-            Inverted("~~"),
-            Negative("-"),
-            Narrow("?"),
-            Not("!"),
-            Invert("~");
+        enum class Operator(private val type: Token.Type) {
+            Increment(Token.Type.DoublePlus),
+            Decrement(Token.Type.DoubleMinus),
+            Narrowed(Token.Type.DoubleQuestion),
+            Toggled(Token.Type.DoubleExclamation),
+            Inverted(Token.Type.DoubleTilde),
+            Negative(Token.Type.Minus),
+            Narrow(Token.Type.Question),
+            Not(Token.Type.Exclamation),
+            Invert(Token.Type.Tilde);
             
             companion object {
-                operator fun get(rep: String) =
-                    values().find { it.rep == rep }!!
+                operator fun get(type: Token.Type) =
+                    values().find { it.type == type }!!
             }
             
-            override fun toString() = rep
+            override fun toString() = type.toString()
         }
         
         override fun <X> accept(visitor: Visitor<X>) =
@@ -62,22 +63,22 @@ sealed class Expr(val loc: Location) {
     }
     
     class Postfix(loc: Location, val operator: Operator, val expr: Expr) : Expr(loc) {
-        enum class Operator(private val rep: String) {
-            Increment("++"),
-            Decrement("--"),
-            Narrowed("??"),
-            Toggled("!!"),
-            Inverted("~~"),
-            IntegerCast("i"),
-            FloatCast("f"),
-            StringCast("s");
+        enum class Operator(private val type: Token.Type) {
+            Increment(Token.Type.DoublePlus),
+            Decrement(Token.Type.DoubleMinus),
+            Narrowed(Token.Type.DoubleQuestion),
+            Toggled(Token.Type.DoubleExclamation),
+            Inverted(Token.Type.DoubleTilde),
+            IntegerCast(Token.Type.SmallI),
+            FloatCast(Token.Type.SmallF),
+            StringCast(Token.Type.SmallS);
             
             companion object {
-                operator fun get(rep: String) =
-                    values().find { it.rep == rep }!!
+                operator fun get(type: Token.Type) =
+                    values().find { it.type == type }!!
             }
             
-            override fun toString() = rep
+            override fun toString() = type.toString()
         }
         
         override fun <X> accept(visitor: Visitor<X>) =
@@ -85,34 +86,35 @@ sealed class Expr(val loc: Location) {
     }
     
     class Binary(loc: Location, val operator: Operator, val left: Expr, val right: Expr) : Expr(loc) {
-        enum class Operator(private val rep: String) {
-            Multiply("*"),
-            Divide("/"),
-            Modulus("%"),
-            Add("+"),
-            Subtract("-"),
-            ShiftLeft("<<"),
-            ShiftRight(">>"),
-            UnsignedShiftRight(">>>"),
-            Less("<"),
-            LessEqual("<="),
-            Greater(">"),
-            GreaterEqual(">="),
-            Equal("=="),
-            NotEqual("<>"),
-            BitAnd("&"),
-            Xor("^"),
-            BitOr("|"),
-            And("&&"),
-            Or("||"),
-            Assign("=");
+        enum class Operator(private val type: Token.Type) {
+            Multiply(Token.Type.Star),
+            Divide(Token.Type.Slash),
+            Modulus(Token.Type.Percent),
+            Add(Token.Type.Plus),
+            Subtract(Token.Type.Minus),
+            ShiftLeft(Token.Type.DoubleLess),
+            ShiftRight(Token.Type.DoubleGreater),
+            UnsignedShiftRight(Token.Type.TripleGreater),
+            Less(Token.Type.LessSign),
+            LessEqual(Token.Type.LessEqualSign),
+            Greater(Token.Type.GreaterSign),
+            GreaterEqual(Token.Type.GreaterEqualSign),
+            Equal(Token.Type.DoubleEqual),
+            NotEqual(Token.Type.LessGreater),
+            BitAnd(Token.Type.Ampersand),
+            Xor(Token.Type.Caret),
+            BitOr(Token.Type.Pipe),
+            And(Token.Type.DoubleAmpersand),
+            Or(Token.Type.DoublePipe),
+            Assign(Token.Type.EqualSign);
             
             companion object {
-                operator fun get(rep: String) =
-                    values().find { it.rep == rep }!!
+                operator fun get(type: Token.Type) =
+                    values().find { it.type == type }!!
             }
             
-            override fun toString() = rep
+            override fun toString() =
+                type.toString()
         }
         
         override fun <X> accept(visitor: Visitor<X>) =

@@ -70,21 +70,11 @@ class Lexer(private val source: Source) {
         else
             NUL
     
-    private fun look(length: Int = 1) =
-        buildString {
-            repeat(length) { o ->
-                append(peek(o))
-            }
-        }
-    
     private fun match(char: Char) =
         peek() == char
     
     private fun match(predicate: Char.() -> Boolean) =
         predicate(peek())
-    
-    private fun match(string: String) =
-        look(string.length) == string
     
     private fun matchNext(predicate: Char.() -> Boolean) =
         predicate(peek(1))
@@ -118,15 +108,6 @@ class Lexer(private val source: Source) {
     private fun skip(predicate: Char.() -> Boolean) =
         if (predicate(peek())) {
             step()
-            true
-        }
-        else {
-            false
-        }
-    
-    private fun skip(string: String) =
-        if (look(string.length) == string) {
-            step(string.length)
             true
         }
         else {
@@ -422,9 +403,9 @@ class Lexer(private val source: Source) {
             
             skip('&')  -> when {
                 skip('&') -> when {
-                    skip('=') -> DoubleAndEqual
+                    skip('=') -> DoubleAmpersandEqual
                     
-                    else      -> DoubleAnd
+                    else      -> DoubleAmpersand
                 }
                 
                 skip('=') -> AndEqual

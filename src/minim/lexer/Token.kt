@@ -41,7 +41,7 @@ data class Token(val loc: Location, val type: Type, val value: Float = 0F) {
     
         Pipe("|"),
     
-        DoubleAnd("&&"),
+        DoubleAmpersand("&&"),
         
         DoublePipe("||"),
     
@@ -59,7 +59,7 @@ data class Token(val loc: Location, val type: Type, val value: Float = 0F) {
         AndEqual("&="),
         CaretEqual("^="),
         PipeEqual("|="),
-        DoubleAndEqual("&&="),
+        DoubleAmpersandEqual("&&="),
         DoublePipeEqual("||="),
         
         Number("#"),

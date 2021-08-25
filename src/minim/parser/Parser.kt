@@ -124,13 +124,25 @@ class Parser(private val tokens: List<Token>) {
         mustSkip(Underscore)
         
         return when {
-            skip(LessSign)    -> Stmt.Goto(loc, expr())
+            skip(LessSign)    -> {
+                val id = expr()
+                
+                val fallback = if (skip(Colon)) expr() else Expr.None
+                
+                Stmt.Goto(loc, id, fallback)
+            }
             
             skip(GreaterSign) -> Stmt.Label(loc, expr())
             
             skip(Caret)       -> Stmt.Jump(loc, expr())
             
-            skip(Plus)        -> Stmt.Gosub(loc, expr())
+            skip(Plus)        -> {
+                val id = expr()
+                
+                val fallback = if (skip(Colon)) expr() else Expr.None
+                
+                Stmt.Gosub(loc, id, fallback)
+            }
             
             skip(Minus)       -> Stmt.Return(loc)
             
@@ -211,7 +223,7 @@ class Parser(private val tokens: List<Token>) {
                 AndEqual,
                 CaretEqual,
                 PipeEqual,
-                DoubleAndEqual,
+                DoubleAmpersandEqual,
                 DoublePipeEqual)
         ) {
             val op = peek()
@@ -241,7 +253,7 @@ class Parser(private val tokens: List<Token>) {
                 
                 PipeEqual          -> compoundAssign(op.loc, expr, BitOr)
                 
-                DoubleAndEqual     -> compoundAssign(op.loc, expr, And)
+                DoubleAmpersandEqual -> compoundAssign(op.loc, expr, And)
                 
                 DoublePipeEqual    -> compoundAssign(op.loc, expr, Or)
                 
@@ -284,7 +296,7 @@ class Parser(private val tokens: List<Token>) {
             
             mustSkip(op.type)
             
-            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type.toString()], node, logicalAnd())
+            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type], node, logicalAnd())
         }
         
         return node
@@ -293,12 +305,12 @@ class Parser(private val tokens: List<Token>) {
     private fun logicalAnd(): Expr {
         var node = bitwiseOr()
         
-        while (match(DoubleAnd)) {
+        while (match(DoubleAmpersand)) {
             val op = peek()
             
             mustSkip(op.type)
             
-            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type.toString()], node, bitwiseOr())
+            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type], node, bitwiseOr())
         }
         
         return node
@@ -312,7 +324,7 @@ class Parser(private val tokens: List<Token>) {
             
             mustSkip(op.type)
             
-            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type.toString()], node, bitwiseXor())
+            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type], node, bitwiseXor())
         }
         
         return node
@@ -326,7 +338,7 @@ class Parser(private val tokens: List<Token>) {
             
             mustSkip(op.type)
             
-            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type.toString()], node, bitwiseAnd())
+            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type], node, bitwiseAnd())
         }
         
         return node
@@ -340,7 +352,7 @@ class Parser(private val tokens: List<Token>) {
             
             mustSkip(op.type)
             
-            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type.toString()], node, equality())
+            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type], node, equality())
         }
         
         return node
@@ -354,7 +366,7 @@ class Parser(private val tokens: List<Token>) {
             
             mustSkip(op.type)
             
-            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type.toString()], node, relational())
+            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type], node, relational())
         }
         
         return node
@@ -368,7 +380,7 @@ class Parser(private val tokens: List<Token>) {
             
             mustSkip(op.type)
             
-            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type.toString()], node, shift())
+            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type], node, shift())
         }
         
         return node
@@ -382,7 +394,7 @@ class Parser(private val tokens: List<Token>) {
             
             mustSkip(op.type)
             
-            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type.toString()], node, additive())
+            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type], node, additive())
         }
         
         return node
@@ -396,7 +408,7 @@ class Parser(private val tokens: List<Token>) {
             
             mustSkip(op.type)
             
-            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type.toString()], node, multiplicative())
+            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type], node, multiplicative())
         }
         
         return node
@@ -410,7 +422,7 @@ class Parser(private val tokens: List<Token>) {
             
             mustSkip(op.type)
             
-            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type.toString()], node, prefix())
+            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type], node, prefix())
         }
         
         return node
@@ -431,7 +443,7 @@ class Parser(private val tokens: List<Token>) {
             
             skip(op.type)
             
-            Expr.Prefix(op.loc, Expr.Prefix.Operator[op.type.toString()], prefix())
+            Expr.Prefix(op.loc, Expr.Prefix.Operator[op.type], prefix())
         }
         else {
             postfix()
@@ -446,7 +458,7 @@ class Parser(private val tokens: List<Token>) {
             
             skip(op.type)
             
-            expr = Expr.Postfix(op.loc, Expr.Postfix.Operator[op.type.toString()], expr)
+            expr = Expr.Postfix(op.loc, Expr.Postfix.Operator[op.type], expr)
         }
         
         return expr
