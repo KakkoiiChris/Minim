@@ -8,5 +8,5 @@ $<65.C=-1.
 C--.
 ; Infinite Lolololololol..., 39 bytes
 []=3&"loL".$<[[0]--].[0]=[0]?[0]:2.C=0.
-; Hello World, 43 bytes
-[]=13&"!dlroW ,olleH".$<[[0]--]._^![0].C=0.
+; Hello World, 42 bytes
+[]="\r!dlroW ,olleH".$<[[0]--]._^![0].C=0.

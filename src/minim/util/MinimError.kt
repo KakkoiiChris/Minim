@@ -4,23 +4,12 @@ import minim.lexer.Location
 import minim.lexer.Token
 import minim.parser.Expr
 
-class MinimError(stage: Stage, msg: String, loc: Location) : Throwable("ERROR @ ${stage.name}: $msg @ $loc") {
-    enum class Stage {
-        GENERAL,
-        LEXER,
-        PARSER,
-        RUNTIME
-    }
+class MinimError(stage: Stage, msg: String, loc: Location) : Throwable("${stage.name} Error @ $loc :: $msg") {
+    enum class Stage { Lexer, Parser, Runtime }
 }
 
-fun generalError(msg: String, loc: Location): Nothing =
-    throw MinimError(MinimError.Stage.GENERAL, msg, loc)
-
-fun unexpectedError(msg: String): Nothing =
-    generalError(msg, Location.none)
-
 fun lexerError(msg: String, loc: Location): Nothing =
-    throw MinimError(MinimError.Stage.LEXER, msg, loc)
+    throw MinimError(MinimError.Stage.Lexer, msg, loc)
 
 fun invalidCharError(char: Char, loc: Location): Nothing =
     lexerError("Character '$char' is invalid!", loc)
@@ -32,7 +21,7 @@ fun invalidNumberError(literal: String, loc: Location): Nothing =
     lexerError("Number '$literal' is invalid!", loc)
 
 fun parserError(msg: String, loc: Location): Nothing =
-    throw MinimError(MinimError.Stage.PARSER, msg, loc)
+    throw MinimError(MinimError.Stage.Parser, msg, loc)
 
 fun noRelativeRangeCountError(loc: Location): Nothing =
     parserError("Relative range count cannot be omitted!", loc)
@@ -50,7 +39,7 @@ fun invalidTypeError(invalid: Token.Type, expected: Token.Type, loc: Location): 
     parserError("Type '$invalid' is invalid; expected '$expected'!", loc)
 
 fun runtimeError(msg: String, loc: Location): Nothing =
-    throw MinimError(MinimError.Stage.RUNTIME, msg, loc)
+    throw MinimError(MinimError.Stage.Runtime, msg, loc)
 
 fun invalidLeftOperandError(operand: Any, operator: Expr.Binary.Operator, loc: Location): Nothing =
     runtimeError("Left operand '$operand' for '$operator' operator is invalid!", loc)
@@ -61,7 +50,7 @@ fun invalidMemoryIndexError(loc: Location): Nothing =
 fun invalidNumericalInputError(input: String, loc: Location): Nothing =
     runtimeError("Input '$input' does not conform to a number!", loc)
 
-fun invalidRangeExprError(name:String, loc: Location):Nothing=
+fun invalidRangeExprError(name: String, loc: Location): Nothing =
     runtimeError("Range $name expression must yield a number!", loc)
 
 fun invalidRightOperandError(operand: Any, operator: Expr.Binary.Operator, loc: Location): Nothing =
@@ -83,4 +72,4 @@ fun undefinedCommandError(name: String, loc: Location): Nothing =
     runtimeError("System command '$name' is not defined!", loc)
 
 fun undefinedLabelError(id: Float, loc: Location): Nothing =
-    runtimeError("Label $id/'${id.toInt().toChar()}' is undefined!", loc)
+    runtimeError("Label $id/'${id.toInt().toChar().slashify()}' is undefined!", loc)

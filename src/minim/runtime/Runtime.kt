@@ -23,7 +23,8 @@ import minim.parser.Expr.Prefix.Operator.Inverted as PreInverted
 import minim.parser.Expr.Prefix.Operator.Narrowed as PreNarrowed
 import minim.parser.Expr.Prefix.Operator.Toggled as PreToggled
 
-class Runtime(private val config: Config, private val stmts: List<Stmt>) : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
+open class Runtime(private val config: Config, private var stmts: List<Stmt>) : Expr.Visitor<Any>,
+    Stmt.Visitor<Unit> {
     private val memory = Stack<MArray>()
     
     private val labels = mutableMapOf<Float, Int>()
@@ -39,19 +40,28 @@ class Runtime(private val config: Config, private val stmts: List<Stmt>) : Expr.
     
     private val memoryQueue = ArrayDeque<MNumber>()
     
-    fun run(): Any {
+    init {
         memory.push(MArray(config.size))
-        
+    }
+    
+    fun run(): MNumber {
         while (counter.value.toInt() < stmts.size) {
             visit(stmts[counter.value.toInt()])
             
             counter.preIncrement()
         }
         
-        println()
-        memory.peek()[0..0xFF].printDebug()
+        if (config.debug) {
+            memory.peek()[0..0xFF].printDebug()
+        }
         
         return memory.peek().first().value
+    }
+    
+    fun reset(stmts: List<Stmt>) {
+        this.stmts = stmts
+        
+        counter.set(0)
     }
     
     override fun visitNoneExpr(expr: Expr.None) = Unit
@@ -561,9 +571,6 @@ class Runtime(private val config: Config, private val stmts: List<Stmt>) : Expr.
         var i = start
         
         while ((i - end).sign == -step.sign) {
-            println((i - end).sign)
-            println(step.sign)
-            
             list.add(memory.peek()[i.toInt()])
             
             i += step
@@ -702,14 +709,20 @@ class Runtime(private val config: Config, private val stmts: List<Stmt>) : Expr.
     }
     
     private fun findLabel(id: Float): Int? {
-        for ((i, stmt) in stmts.withIndex()) {
+        var i = 0
+        
+        while (i < stmts.size) {
+            val pos = (i++ + counter.value.toInt()) % stmts.size
+            
+            val stmt = stmts[pos]
+            
             if (stmt is Stmt.Label) {
                 val otherID = (visit(stmt.id).fromRef() as? MNumber ?: invalidStatementArgumentError(stmt.id.loc)).value
                 
                 if (id == otherID) {
-                    labels[id] = i
+                    labels[id] = pos
                     
-                    return i
+                    return pos
                 }
             }
         }

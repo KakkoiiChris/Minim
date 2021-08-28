@@ -1,5 +1,7 @@
 package minim.runtime
 
+import minim.util.slashify
+
 class MArray(private val elements: List<Ref>) : List<Ref> by elements {
     constructor(size: Int) : this(List(size) { Ref(MNumber.Float()) })
     
@@ -19,30 +21,18 @@ class MArray(private val elements: List<Ref>) : List<Ref> by elements {
             widths[i] = maxOf(widthI, widthN, widthC)
         }
         
-        println(mapIndexed { i, _ -> i.toString().padStart(widths[i]) }.joinToString(prefix = "INDEX: ",
+        println(mapIndexed { i, _ -> i.toString().padStart(widths[i]) }.joinToString(prefix = "Index | ",
             separator = " | "))
         
-        println(mapIndexed { i, e -> e.value.toString().padStart(widths[i]) }.joinToString(prefix = "VALUE: ",
+        println(mapIndexed { i, e -> e.value.toString().padStart(widths[i]) }.joinToString(prefix = "Value | ",
             separator = " | "))
         
-        println(mapIndexed { i, e -> e.value.toChar().slashify().padStart(widths[i]) }.joinToString(prefix = " CHAR: ",
+        println(mapIndexed { i, e -> e.value.toChar().slashify().padStart(widths[i]) }.joinToString(prefix = " Char | ",
             separator = " | "))
     }
     
     override fun toString() =
         map { it.fromRef() }.joinToString(prefix = "{ ", separator = ", ", postfix = " }")
-}
-
-fun Char.slashify() = when (this) {
-    '\u0000' -> "\\0"
-    '\u0007' -> "\\a"
-    '\b'     -> "\\b"
-    '\u000c' -> "\\f"
-    '\n'     -> "\\n"
-    '\r'     -> "\\r"
-    '\t'     -> "\\t"
-    '\u000B' -> "\\v"
-    else     -> "$this"
 }
 
 fun String.toMArray() =

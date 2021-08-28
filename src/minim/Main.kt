@@ -1,14 +1,20 @@
 package minim
 
 import minim.runtime.Config
+import minim.runtime.MNumber
+import minim.runtime.Runtime
+import minim.util.MinimError
 import minim.util.Source
+import minim.util.slashify
 import java.io.File
+import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTimedValue
 
 @ExperimentalTime
 fun main(mainArgs: Array<String>) {
     var args = ""
+    var debug = false
     var file = ""
     var size = 0x10000
     
@@ -19,6 +25,8 @@ fun main(mainArgs: Array<String>) {
         
         if (arg[0] == '-') when (arg.substring(1)) {
             "a" -> args = mainArgs[++i]
+            
+            "d" -> debug = true
             
             "f" -> file = mainArgs[++i]
             
@@ -44,18 +52,20 @@ fun main(mainArgs: Array<String>) {
         i++
     }
     
-    val config = Config(args, size)
+    val repl = file.isEmpty()
     
-    if (file.isNotEmpty()) {
-        file(config, file)
+    val config = Config(args, debug, repl, size)
+    
+    if (repl) {
+        repl(config)
     }
     else {
-        repl()
+        file(config, file)
     }
 }
 
 @ExperimentalTime
-private fun repl() {
+private fun repl(config: Config) {
     println("""
         ##.      .##'    .##
         ####.  .##'    .##'
@@ -69,24 +79,46 @@ private fun repl() {
         ##'    .##'       ##
         --------------------
          Minim  Programming
-          Language V 5.1.5
+          Language V 5.1.9
           
           """.trimIndent())
     
+    val runtime = Runtime(config, mutableListOf())
+    
     do {
-        print("minim> ")
+        print("$> ")
         
         val text = readLine()?.takeIf { it.isNotBlank() } ?: break
         
-        println()
+        val (value, duration) = try {
+            val code = "[0] = $text."
+            
+            val source = Source("REPL", code)
+            
+            val stmts = source.compile()
+            
+            runtime.reset(stmts)
+            
+            measureTimedValue { runtime.run() }
+        }
+        catch (e: MinimError) {
+            try {
+                val source = Source("REPL", text)
+                
+                val stmts = source.compile()
+                
+                runtime.reset(stmts)
+                
+                measureTimedValue { runtime.run() }
+            }
+            catch (e: MinimError) {
+                printError(config, e)
+                
+                continue
+            }
+        }
         
-        val code = "[0] = $text."
-        
-        val source = Source("<REPL>", code)
-        
-        exec(Config(), source)
-        
-        println()
+        printEndMessage(value, duration)
     }
     while (true)
 }
@@ -100,19 +132,34 @@ private fun file(config: Config, path: String) {
     
     val source = Source(name, text)
     
-    exec(config, source)
+    try {
+        val stmts = source.compile()
+        
+        val runtime = Runtime(config, stmts)
+        
+        val (value, duration) = measureTimedValue { runtime.run() }
+        
+        printEndMessage(value, duration)
+    }
+    catch (e: MinimError) {
+        printError(config, e)
+    }
 }
 
 @ExperimentalTime
-private fun exec(config: Config, source: Source) {
-    val runtime = source.compile(config)
-    
-    val (value, duration) = measureTimedValue { runtime.run() }
-    
-    if (value == Unit) {
-        println("Done (${duration.inWholeMilliseconds / 1E3} s)")
+private fun printEndMessage(value: MNumber, duration: Duration) {
+    println("\n$< $value, '${value.toChar().slashify()}' (${duration.inWholeNanoseconds / 1E9} s)\n")
+}
+
+private fun printError(config: Config, e: MinimError) {
+    if (config.debug) {
+        println()
+        
+        e.printStackTrace()
+        
+        println("\n")
     }
     else {
-        println("Done: $value (${duration.inWholeMilliseconds / 1E3} s)")
+        println("\n${e.message}\n")
     }
 }

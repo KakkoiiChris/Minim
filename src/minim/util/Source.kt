@@ -2,6 +2,7 @@ package minim.util
 
 import minim.lexer.Lexer
 import minim.parser.Parser
+import minim.parser.Stmt
 import minim.runtime.Config
 import minim.runtime.Runtime
 
@@ -18,15 +19,13 @@ data class Source(val name: String, val text: String) {
         }
     }
     
-    fun compile(config: Config): Runtime {
+    fun compile(): List<Stmt> {
         val lexer = Lexer(this)
         
         val tokens = lexer.lex()
         
         val parser = Parser(tokens)
         
-        val stmts = parser.parse()
-        
-        return Runtime(config, stmts)
+        return parser.parse()
     }
 }
