@@ -769,23 +769,22 @@ open class Runtime(private val config: Config, private var stmts: List<Stmt>) : 
     }
     
     override fun visitSystemArgStmt(stmt: Stmt.SystemArg) {
-        val expr = visit(stmt.expr).fromRef() as? MNumber ?: invalidStatementArgumentError(stmt.expr.loc)
-        
-        systemInputQueue.add(expr.toFloat())
+        when (val expr = visit(stmt.expr).fromRef()) {
+            is MNumber -> systemInputQueue.add(expr.toFloat())
+            
+            is MArray  -> for (ref in expr) {
+                systemInputQueue.add(ref.value.toFloat())
+            }
+            
+            else       -> invalidStatementArgumentError(stmt.expr.loc)
+        }
     }
     
     override fun visitSystemCallStmt(stmt: Stmt.SystemCall) {
         if (systemInputQueue.isNotEmpty()) {
             val start = systemInputQueue.removeFirst().toInt()
             
-            var end = start
-            
-            do {
-                end++
-            }
-            while (memory.peek()[end].value.toFloat() != 0F)
-            
-            val commandName = memory.peek()[start until end].ascii
+            val commandName = memory.peek()!!.scanString(start)
             
             val command = Library[commandName] ?: undefinedCommandError(commandName, stmt.loc)
             

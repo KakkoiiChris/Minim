@@ -5,10 +5,20 @@ import minim.util.slashify
 class MArray(private val elements: List<Ref>) : List<Ref> by elements {
     constructor(size: Int) : this(List(size) { Ref(MNumber.Float()) })
     
-    val ascii get() = String(map { it.value.toChar() }.toCharArray())
-    
     operator fun get(indices: IntRange) =
         MArray(slice(indices))
+    
+    fun scanString(start: Int) = buildString {
+        var i = start
+        
+        while (i < size) {
+            val element = elements[i++].value.toChar()
+            
+            if (element == '\u0000') break
+            
+            append(element)
+        }
+    }
     
     fun printDebug() {
         val widths = IntArray(size)
