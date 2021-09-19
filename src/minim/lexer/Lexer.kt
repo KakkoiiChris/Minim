@@ -9,11 +9,21 @@ import minim.util.invalidNumberError
 import kotlin.math.E
 import kotlin.math.PI
 
-@Suppress("ControlFlowWithEmptyBody")
+/**
+ * The first stage of the interpreter; a scanner which converts source code into separate [tokens][Token].
+ *
+ * @param source the source to convert
+ */
 class Lexer(private val source: Source) {
     companion object {
+        /**
+         * Shorthand for the end-of-file character.
+         */
         private const val NUL = '\u0000'
-        
+    
+        /**
+         * Map of all valid static numeric literals.
+         */
         private val literals = mapOf(
             'T' to 1F,
             'F' to 0F,
@@ -24,12 +34,31 @@ class Lexer(private val source: Source) {
         )
     }
     
+    /**
+     * The source code for the program.
+     */
     private val code = source.text.replace("\r", "")
     
+    /**
+     * The current position within the source code.
+     */
     private var pos = 0
+    
+    /**
+     * The current vertical position within the source code.
+     */
     private var row = 1
+    
+    /**
+     * The current horizontal position within the source code.
+     */
     private var col = 1
     
+    /**
+     * Converts the given [source's][Source] [text content][Source.text] into a list of [tokens][Token].
+     *
+     * @return the source code, tokenized
+     */
     fun lex(): List<Token> {
         val tokens = mutableListOf<Token>()
         
@@ -49,13 +78,13 @@ class Lexer(private val source: Source) {
                 
                 match { isDigit() }      -> listOf(number())
                 
-                match { isLetter() }     -> listOf(word())
+                match { isLetter() }     -> listOf(letter())
                 
                 match('\'')              -> listOf(char())
                 
                 match('"')               -> string()
                 
-                else                     -> listOf(operator())
+                else                     -> listOf(symbol())
             })
         }
         
@@ -64,24 +93,62 @@ class Lexer(private val source: Source) {
         return tokens
     }
     
+    /**
+     * Gets the character a given [offset] from the current [position][pos]; usually the current character being lexed.
+     *
+     * @param offset the distance from the current position to look at
+     *
+     * @return the character at [pos] + [offset]
+     */
     private fun peek(offset: Int = 0) =
         if (pos + offset < code.length)
             code[pos + offset]
         else
             NUL
     
+    /**
+     * Checks if the current character being lexed matches the given [character][char].
+     *
+     * @param char the character to match
+     *
+     * @return `true` if [char] occurs at the current position, or `false` otherwise
+     */
     private fun match(char: Char) =
         peek() == char
     
+    /**
+     * Checks if the current character being lexed matches the given [predicate].
+     *
+     * @param predicate the condition of the character to match
+     *
+     * @return `true` if the character at the current position matches the predicate, or `false` otherwise
+     */
     private fun match(predicate: Char.() -> Boolean) =
         predicate(peek())
     
+    /**
+     * Checks if the next character to be lexed matches the given [predicate].
+     *
+     * @param predicate the condition of the character to match
+     *
+     * @return `true` if the character at the next position matches the predicate, or `false` otherwise
+     */
     private fun matchNext(predicate: Char.() -> Boolean) =
         predicate(peek(1))
     
+    /**
+     * Checks if the end of the source code has been reached.
+     *
+     * @return `true` if [peek] returns [NUL], or `false` otherwise
+     */
     private fun isEOF() =
         match('\u0000')
     
+    /**
+     * Advances the lexer [pos]ition by the given step [count], and updates the [row] and [col] based on whether or not a newline was encountered.
+     *
+     * @param count the amount of times to advance the [pos]
+     */
     private fun step(count: Int = 1) {
         repeat(count) {
             if (match('\n')) {
@@ -96,6 +163,13 @@ class Lexer(private val source: Source) {
         }
     }
     
+    /**
+     * Checks if the current character being lexed matches the given [character][char], and [step]s if it does.
+     *
+     * @param char the character to skip
+     *
+     * @return `true` if [char] occurs at the current position, or `false` otherwise
+     */
     private fun skip(char: Char) =
         if (match(char)) {
             step()
@@ -105,6 +179,13 @@ class Lexer(private val source: Source) {
             false
         }
     
+    /**
+     * Checks if the current character being lexed matches the given [predicate], and [step]s if it does.
+     *
+     * @param predicate the condition of the character to skip
+     *
+     * @return `true` if the character at the current position matches the predicate, or `false` otherwise
+     */
     private fun skip(predicate: Char.() -> Boolean) =
         if (predicate(peek())) {
             step()
@@ -114,20 +195,39 @@ class Lexer(private val source: Source) {
             false
         }
     
+    /**
+     * Gets the current [Location] of the lexer.
+     *
+     * @return an instance of [Location] with the current file name, [row], and [col]
+     */
     private fun here() =
         Location(source.name, row, col)
     
-    private fun StringBuilder.take(char: Char = peek()) {
-        append(char)
+    /**
+     * Helper extension function to add the current character to a [StringBuilder] and advance the lexer.
+     *
+     * @receiver a [StringBuilder] that is accumulating the contents of a multi-character [Token] ([number] or [string])
+     */
+    private fun StringBuilder.take() {
+        append(peek())
         
         step()
     }
     
+    /**
+     * Advances the lexer while the current character is a whitespace character.
+     */
+    @Suppress("ControlFlowWithEmptyBody")
     private fun skipWhitespace() {
         while (skip { isWhitespace() });
     }
     
+    /**
+     * Advances the lexer until a newline not preceded by a backslash is encountered.
+     */
     private fun skipComment() {
+        skip(';')
+        
         do {
             skip('\\')
             
@@ -136,36 +236,80 @@ class Lexer(private val source: Source) {
         while (!(isEOF() || skip('\n')))
     }
     
+    /**
+     * Lexes a single numeric literal.
+     *
+     * @return a [Value] [Token] with the numeric value
+     */
     private fun number(): Token {
         val loc = here()
         
-        val result = buildString {
-            do {
-                take()
-            }
-            while (match { isDigit() })
-            
-            if (match('.') && matchNext { isDigit() }) {
-                do {
+        val value = when {
+            match('0') && matchNext { this in "Bb" } -> {
+                val result = buildString {
                     take()
+                    take()
+                    
+                    do {
+                        take()
+                    }
+                    while (match { this in "01_" })
                 }
-                while (match { isDigit() })
-            }
-            
-            if (match { this in "Ee" }) {
-                take()
                 
-                do {
+                (result.substring(2).replace("_", "").toIntOrNull(2) ?: invalidNumberError(result, loc)).toFloat()
+            }
+            
+            match('0') && matchNext { this in "Xx" } -> {
+                val result = buildString {
                     take()
+                    take()
+                    
+                    do {
+                        take()
+                    }
+                    while (match { isDigit() || this in "AaBbCcDdEeFf_" })
                 }
-                while (match { isDigit() })
+                
+                (result.substring(2).replace("_", "").toIntOrNull(16) ?: invalidNumberError(result, loc)).toFloat()
+            }
+            
+            else                                     -> {
+                val result = buildString {
+                    do {
+                        take()
+                    }
+                    while (match { isDigit() })
+                    
+                    if (match('.') && matchNext { isDigit() }) {
+                        do {
+                            take()
+                        }
+                        while (match { isDigit() })
+                    }
+                    
+                    if (match { this in "Ee" }) {
+                        take()
+                        
+                        do {
+                            take()
+                        }
+                        while (match { isDigit() })
+                    }
+                }
+                
+                result.toFloatOrNull() ?: invalidNumberError(result, loc)
             }
         }
         
-        return Token(loc, Value, result.toFloatOrNull() ?: invalidNumberError(result, loc))
+        return Token(loc, Value, value)
     }
     
-    private fun word(): Token {
+    /**
+     * Lexes a single alphabetic literal.
+     *
+     * @return a [Token] with the appropriate [Type][Token.Type]
+     */
+    private fun letter(): Token {
         val loc = here()
         
         val char = peek()
@@ -189,6 +333,13 @@ class Lexer(private val source: Source) {
         }
     }
     
+    /**
+     * Gets a sequence of characters of length [size] and converts it from a hexadecimal number to it's associated unicode character.
+     *
+     * @param size the length of the unicode value to convert
+     *
+     * @return the [Char] associated with the value
+     */
     private fun unicode(size: Int) =
         buildString {
             repeat(size) {
@@ -196,6 +347,11 @@ class Lexer(private val source: Source) {
             }
         }.toInt(16).toChar()
     
+    /**
+     * Lexes a single character literal.
+     *
+     * @return a [Value] [Token] with the numeric value associated with the character
+     */
     private fun char(): Token {
         val loc = here()
         
@@ -243,6 +399,11 @@ class Lexer(private val source: Source) {
         return Token(loc, Value, char.code.toFloat())
     }
     
+    /**
+     * Lexes a single string literal.
+     *
+     * @return a list of [Value] tokens based on the character values, including a null terminator, separated by [Comma] tokens, and surrounded by a [LeftBrace] and [RightBrace] token
+     */
     private fun string(): List<Token> {
         val loc = here()
         
@@ -304,7 +465,12 @@ class Lexer(private val source: Source) {
         return tokens
     }
     
-    private fun operator(): Token {
+    /**
+     * Lexes a single statement header, operator, or delimiter.
+     *
+     * @return a [Token] with the appropriate [Type][Token.Type]
+     */
+    private fun symbol(): Token {
         val loc = here()
         
         val op = when {

@@ -5,12 +5,15 @@ import minim.runtime.MNumber
 import minim.runtime.Runtime
 import minim.util.MinimError
 import minim.util.Source
-import minim.util.slashify
+import minim.util.escaped
 import java.io.File
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTimedValue
 
+/**
+ * Parses program flags from the command line arguments, and starts the appropriate interpreter mode.
+ */
 @ExperimentalTime
 fun main(mainArgs: Array<String>) {
     var args = ""
@@ -64,6 +67,11 @@ fun main(mainArgs: Array<String>) {
     }
 }
 
+/**
+ * Runs the interpreter in REPL (Read-Eval-Print Loop) mode.
+ *
+ * @param config the configuration data for the [Runtime]
+ */
 @ExperimentalTime
 private fun repl(config: Config) {
     println("""
@@ -111,8 +119,8 @@ private fun repl(config: Config) {
                 
                 measureTimedValue { runtime.run() }
             }
-            catch (e: MinimError) {
-                printError(config, e)
+            catch (error: MinimError) {
+                printError(config.debug, error)
                 
                 continue
             }
@@ -123,6 +131,12 @@ private fun repl(config: Config) {
     while (true)
 }
 
+/**
+ * Runs the interpreter in file mode.
+ *
+ * @param config the configuration data for the [Runtime]
+ * @param path the path fo the file to read and run
+ */
 @ExperimentalTime
 private fun file(config: Config, path: String) {
     val file = File(path)
@@ -141,25 +155,37 @@ private fun file(config: Config, path: String) {
         
         printEndMessage(value, duration)
     }
-    catch (e: MinimError) {
-        printError(config, e)
+    catch (error: MinimError) {
+        printError(config.debug, error)
     }
 }
 
+/**
+ * Prints the end-of-execution message, with the final value and the execution time.
+ *
+ * @param value the final value of memory index 0
+ * @param duration the timing of the program execution
+ */
 @ExperimentalTime
 private fun printEndMessage(value: MNumber, duration: Duration) {
-    println("\n$< $value, '${value.toChar().slashify()}' (${duration.inWholeNanoseconds / 1E9} s)\n")
+    println("\n$< $value, '${value.toChar().escaped()}' (${duration.inWholeNanoseconds / 1E9} s)\n")
 }
 
-private fun printError(config: Config, e: MinimError) {
-    if (config.debug) {
+/**
+ * Prints the error message, or the full error stack trace if debug mode is active.
+ *
+ * @param debug if debug mode is active
+ * @param error the error to print
+ */
+private fun printError(debug: Boolean, error: MinimError) {
+    if (debug) {
         println()
         
-        e.printStackTrace()
+        error.printStackTrace()
         
         println("\n")
     }
     else {
-        println("\n${e.message}\n")
+        println("\n${error.message}\n")
     }
 }

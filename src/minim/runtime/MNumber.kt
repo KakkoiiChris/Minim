@@ -4,59 +4,187 @@ import minim.util.toBoolean
 import minim.util.toFloat
 import minim.util.toInt
 
+/**
+ * An interface whose implementations act as a sum type for a [Float] or [Int] value.
+ */
 sealed interface MNumber {
+    /**
+     * Gets the internal value of this instance.
+     */
     val value: Any
     
+    /**
+     * Gets the negative value of this number.
+     *
+     * @return ex. - 5 -> -5
+     */
     operator fun unaryMinus(): MNumber
     
+    /**
+     * Gets the logical opposite value of this number.
+     *
+     * @return ex. ! 5 -> 0
+     */
     operator fun not(): MNumber
     
+    /**
+     * Gets the logical identity (truthiness) value of this number.
+     *
+     * @return ex. ? 5 -> 1
+     */
     fun narrow(): MNumber
     
+    /**
+     * Gets the bitwise inversion value of this number.
+     *
+     * @return ex. ~ 5 -> -6
+     */
     fun inv(): MNumber
     
+    /**
+     * Gets the value of this number plus x.
+     *
+     * @return ex. 5 + 7 -> 12
+     */
     operator fun plus(x: MNumber): MNumber
     
+    /**
+     * Gets the value of this number minus x.
+     *
+     * @return ex. 5 - 7 -> -2
+     */
     operator fun minus(x: MNumber): MNumber
     
+    /**
+     * Gets the value of this number times x.
+     *
+     * @return ex. 5 * 7 -> 35
+     */
     operator fun times(x: MNumber): MNumber
     
+    /**
+     * Gets the value of this number divided by x.
+     *
+     * @return ex. 5 / 7 -> 0, 5.0 / 7.0 -> 0.71428573
+     */
     operator fun div(x: MNumber): MNumber
     
+    /**
+     * Gets the value of this number modulo x.
+     *
+     * @return ex. 5 % 7 -> 5
+     */
     operator fun rem(x: MNumber): MNumber
     
+    /**
+     * Gets the truthy value of this number less than x.
+     *
+     * @return ex. 5 < 7 -> 1
+     */
     infix fun lss(x: MNumber): MNumber
     
+    /**
+     * Gets the truthy value of this number less than or equal to x.
+     *
+     * @return ex. 5 <= 7 -> 1
+     */
     infix fun leq(x: MNumber): MNumber
     
+    /**
+     * Gets the truthy value of this number greater than x.
+     *
+     * @return ex. 5 > 7 -> 0
+     */
     infix fun grt(x: MNumber): MNumber
     
+    /**
+     * Gets the truthy value of this number greater than or equal to x.
+     *
+     * @return ex. 5 >= 7 -> 0
+     */
     infix fun geq(x: MNumber): MNumber
     
+    /**
+     * Gets the truthy value of this number equal to x.
+     *
+     * @return ex. 5 == 7 -> 0
+     */
     infix fun equ(x: MNumber): MNumber
     
+    /**
+     * Gets the truthy value of this number not equal to x.
+     *
+     * @return ex. 5 <> 7 -> 1
+     */
     infix fun neq(x: MNumber): MNumber
     
+    /**
+     * Gets the value of and-ing the bits of this number and x.
+     *
+     * @return ex. 5 & 7 -> 5
+     */
     infix fun bnd(x: MNumber): MNumber
     
+    /**
+     * Gets the value of exclusive-or-ing the bits of this number and x.
+     *
+     * @return ex. 5 ^ 7 -> 2
+     */
     infix fun xor(x: MNumber): MNumber
     
+    /**
+     * Gets the value of or-ing the bits of this number and x.
+     *
+     * @return ex. 5 | 7 -> 7
+     */
     infix fun bor(x: MNumber): MNumber
     
+    /**
+     * Gets the value of left shifting the bits of this number by x places.
+     *
+     * @return ex. 5 << 7 -> 640
+     */
     infix fun shl(x: MNumber): MNumber
     
+    /**
+     * Gets the value of right shifting the bits of this number by x places.
+     *
+     * @return ex. 5 >> 7 -> 0
+     */
     infix fun shr(x: MNumber): MNumber
     
+    /**
+     * Gets the value of unsigned right shifting the bits of this number by x places.
+     *
+     * @return ex. 5 >>> 7 -> 0
+     */
     infix fun usr(x: MNumber): MNumber
     
+    /**
+     * Gets a boolean value based on the truthiness of this number.
+     */
     fun toBoolean(): Boolean
     
+    /**
+     * Gets a character value based on the unicode value of this number.
+     */
     fun toChar(): Char
     
+    /**
+     * Converts this number to a float.
+     */
     fun toFloat(): kotlin.Float
     
+    /**
+     * Converts this number to an integer.
+     */
     fun toInt(): kotlin.Int
     
+    /**
+     * An implementation of [MNumber] that uses 32-bit floating-point numbers and arithmetic.
+     *
+     * @param value the internal value
+     */
     class Float(override val value: kotlin.Float = 0F) : MNumber {
         override operator fun unaryMinus() =
             Float(-value)
@@ -171,6 +299,11 @@ sealed interface MNumber {
             value.toString()
     }
     
+    /**
+     * An implementation of [MNumber] that uses 32-bit integer numbers and arithmetic.
+     *
+     * @param value the internal value
+     */
     class Int(override val value: kotlin.Int = 0) : MNumber {
         override operator fun unaryMinus() =
             Int(-value)

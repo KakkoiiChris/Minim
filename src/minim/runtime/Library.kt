@@ -3,9 +3,20 @@ package minim.runtime
 import minim.util.toFloat
 import kotlin.math.*
 
+/**
+ * A mapping of every available system function.
+ */
 object Library : MutableMap<String, Library.Function> by mutableMapOf() {
     init {
-        // General
+        addGeneral()
+        addMath()
+        addText()
+    }
+    
+    /**
+     * Adds all of the general functions to the library map.
+     */
+    private fun addGeneral() {
         this["time"] = Function { _, _ -> floatArrayOf(System.currentTimeMillis() / 1000F) }
         
         this["wait"] = Function(1) { _, args ->
@@ -15,8 +26,12 @@ object Library : MutableMap<String, Library.Function> by mutableMapOf() {
             
             floatArrayOf()
         }
-        
-        // Math
+    }
+    
+    /**
+     * Adds all of the math functions to the library map.
+     */
+    private fun addMath() {
         this["abs"] = Function(1) { _, args ->
             val (n) = args
             
@@ -250,9 +265,12 @@ object Library : MutableMap<String, Library.Function> by mutableMapOf() {
             
             floatArrayOf(n.ulp)
         }
-        
-        // Text
-        
+    }
+    
+    /**
+     * Adds all of the text functions to the library map.
+     */
+    private fun addText() {
         this["isalpha"] = Function(1) { _, args ->
             val (c) = args
             
@@ -302,7 +320,19 @@ object Library : MutableMap<String, Library.Function> by mutableMapOf() {
         }
     }
     
-    class Function(val arity: Int = 0, val method: (runtime: Runtime, args: FloatArray) -> FloatArray) {
+    /**
+     * A representation of a single system function.
+     *
+     * @param arity the amount of parameters the function has
+     * @param method the body of the system function
+     */
+    data class Function(val arity: Int = 0, val method: (runtime: Runtime, args: FloatArray) -> FloatArray) {
+        /**
+         * Delegates to the invocation of the [method] lambda.
+         *
+         * @param runtime the current runtime being run
+         * @param args the arguments to call the function with
+         */
         operator fun invoke(runtime: Runtime, args: FloatArray) =
             method(runtime, args)
     }

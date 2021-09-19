@@ -6,19 +6,18 @@ import minim.parser.Stmt
 import minim.runtime.Config
 import minim.runtime.Runtime
 
+/**
+ * An origin-agnostic representation of a code source.
+ *
+ * @param name the name associated with this source
+ * @param text the code content associated with this source
+ */
 data class Source(val name: String, val text: String) {
-    companion object {
-        fun readLocalFile(name: String, path: String): Source {
-            val content = Source::class.java
-                .getResourceAsStream(path)
-                ?.bufferedReader()
-                ?.readText()
-                ?: ""
-            
-            return Source(name, content)
-        }
-    }
-    
+    /**
+     * Sequentially lexes and parses this source's [text].
+     *
+     * @return The [statements][Stmt] parsed from this source
+     */
     fun compile(): List<Stmt> {
         val lexer = Lexer(this)
         
