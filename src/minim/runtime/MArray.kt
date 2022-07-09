@@ -80,7 +80,7 @@ class MArray(private val elements: List<Reference>) : List<Reference> by element
                 
                 println("[$from -> $to]")
                 
-                println(slice.mapIndexed { i, _ ->
+                println(List(slice.size) { i ->
                     (i + from).toString().padStart(widths[i])
                 }.joinToString(prefix = "Index | ", separator = " | "))
                 

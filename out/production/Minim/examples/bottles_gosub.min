@@ -13,8 +13,8 @@ _> '['.
     [2 :] = ([0] - 1) ? " bottles of beer.\n" : " bottle of beer.\n".
     _+ 'P'.
     
-    _< [0] ? '+' : ']'.
-    _> '+'.
+    _^ [0].
+        _> ']'.
     
     [2 :] = "Take one down, pass it around,\n".
     _+ 'P'.

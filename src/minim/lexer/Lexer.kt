@@ -145,7 +145,7 @@ class Lexer(private val source: Source) {
         match('\u0000')
     
     /**
-     * Advances the lexer [pos]ition by the given step [count], and updates the [row] and [col] based on whether or not a newline was encountered.
+     * Advances the lexer [pos]ition by the given step [count], and updates the [row] and [col] based on whether a newline was encountered.
      *
      * @param count the amount of times to advance the [pos]
      */

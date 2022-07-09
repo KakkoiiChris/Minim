@@ -5,7 +5,7 @@ package minim.runtime
  *
  * @param value the value to hold
  */
-class Reference(var value: MNumber = MNumber.Float()) {
+class Reference(var value: MNumber<*> = MNumber.Float()) {
     /**
      * Increases [value] by 1, and gets the new value.
      *
@@ -45,22 +45,22 @@ class Reference(var value: MNumber = MNumber.Float()) {
     }
     
     /**
-     * Converts [value] to it's logical identity, and gets the new value.
+     * Converts [value] to its logical identity, and gets the new value.
      *
      * @return ?[value]
      */
-    fun preNarrow(): MNumber {
+    fun preNarrow(): MNumber<*> {
         value = value.narrow()
         
         return value
     }
     
     /**
-     * Converts [value] to it's logical inverse, and gets the new value.
+     * Converts [value] to its logical inverse, and gets the new value.
      *
      * @return ![value]
      */
-    fun preToggle(): MNumber {
+    fun preToggle(): MNumber<*> {
         value = value.not()
         
         return value
@@ -71,7 +71,7 @@ class Reference(var value: MNumber = MNumber.Float()) {
      *
      * @return ~[value]
      */
-    fun preInvert(): MNumber {
+    fun preInvert(): MNumber<*> {
         value = value.inv()
         
         return value
@@ -124,11 +124,11 @@ class Reference(var value: MNumber = MNumber.Float()) {
     }
     
     /**
-     * Converts [value] to it's logical identity, and gets the old value.
+     * Converts [value] to its logical identity, and gets the old value.
      *
      * @return [value]
      */
-    fun postNarrow(): MNumber {
+    fun postNarrow(): MNumber<*> {
         val before = value
         
         value = value.narrow()
@@ -137,11 +137,11 @@ class Reference(var value: MNumber = MNumber.Float()) {
     }
     
     /**
-     * Converts [value] to it's logical inverse, and gets the old value.
+     * Converts [value] to its logical inverse, and gets the old value.
      *
      * @return [value]
      */
-    fun postToggle(): MNumber {
+    fun postToggle(): MNumber<*> {
         val before = value
         
         value = value.not()
@@ -154,7 +154,7 @@ class Reference(var value: MNumber = MNumber.Float()) {
      *
      * @return [value]
      */
-    fun postInvert(): MNumber {
+    fun postInvert(): MNumber<*> {
         val before = value
         
         value = value.inv()
@@ -169,7 +169,7 @@ class Reference(var value: MNumber = MNumber.Float()) {
      *
      * @return [x]
      */
-    fun assign(x: MNumber): MNumber {
+    fun assign(x: MNumber<*>): MNumber<*> {
         value = x
         
         return x

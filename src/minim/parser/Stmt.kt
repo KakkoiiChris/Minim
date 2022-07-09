@@ -2,6 +2,8 @@ package minim.parser
 
 import minim.lexer.Location
 
+typealias Stmts = List<Stmt>
+
 /**
  * Subclass for all possible statements.
  *
@@ -262,7 +264,7 @@ sealed class Stmt(val loc: Location) {
      * A subclass representing a numerical input statement.
      *
      * @param loc the location of this statement
-     * @param isIntMode whether or not this statement will convert it's result to an integer
+     * @param isIntMode whether this statement will convert its result to an integer
      * @param expr the target to store the result in
      */
     class NumberIn(loc: Location, val isIntMode: Boolean, val expr: Expr) : Stmt(loc) {
@@ -274,7 +276,7 @@ sealed class Stmt(val loc: Location) {
      * A subclass representing a numerical output statement.
      *
      * @param loc the location of this statement
-     * @param isIntMode whether or not this statement will convert it's result to an integer
+     * @param isIntMode whether this statement will convert its result to an integer
      * @param expr the value to print as a number
      */
     class NumberOut(loc: Location, val isIntMode: Boolean, val expr: Expr) : Stmt(loc) {
@@ -286,7 +288,7 @@ sealed class Stmt(val loc: Location) {
      * A subclass representing a text input statement.
      *
      * @param loc the location of this statement
-     * @param isIntMode whether or not this statement will convert it's result to an integer
+     * @param isIntMode whether this statement will convert its result to an integer
      * @param expr the target to store the result in
      */
     class TextIn(loc: Location, val isIntMode: Boolean, val expr: Expr) : Stmt(loc) {
@@ -341,7 +343,7 @@ sealed class Stmt(val loc: Location) {
      * A subclass representing a jump statement.
      *
      * @param loc the location of this statement
-     * @param condition whether or not the next statement is skipped
+     * @param condition whether the next statement is skipped
      */
     class Jump(loc: Location, val condition: Expr) : Stmt(loc) {
         override fun <X> accept(visitor: Visitor<X>) =
@@ -384,7 +386,7 @@ sealed class Stmt(val loc: Location) {
      * A subclass representing a system yield statement.
      *
      * @param loc the location of this statement
-     * @param isIntMode whether or not this statement will convert it's result to an integer
+     * @param isIntMode whether this statement will convert its result to an integer
      * @param expr the target to store the result in
      */
     class SystemYield(loc: Location, val isIntMode: Boolean, val expr: Expr) : Stmt(loc) {

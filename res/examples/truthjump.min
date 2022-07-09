@@ -1,0 +1,12 @@
+; truth-machine w/ Jump \
+  Christian Alexander   \
+  06/23/2021
+
+#> [0].
+
+_> 0.
+    #< [0].
+    _^ ![0].
+_< 0.
+
+$< '\n'.

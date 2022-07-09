@@ -2,9 +2,8 @@ package minim.util
 
 import minim.lexer.Lexer
 import minim.parser.Parser
+import minim.parser.Program
 import minim.parser.Stmt
-import minim.runtime.Config
-import minim.runtime.Runtime
 
 /**
  * An origin-agnostic representation of a code source.
@@ -18,13 +17,15 @@ data class Source(val name: String, val text: String) {
      *
      * @return The [statements][Stmt] parsed from this source
      */
-    fun compile(): List<Stmt> {
+    fun create(): Program {
         val lexer = Lexer(this)
         
         val tokens = lexer.lex()
         
         val parser = Parser(tokens)
         
-        return parser.parse()
+        val stmts = parser.parse()
+        
+        return Program(stmts)
     }
 }

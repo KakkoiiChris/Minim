@@ -1,5 +1,6 @@
 package minim
 
+import minim.parser.Program
 import minim.runtime.Config
 import minim.runtime.MNumber
 import minim.runtime.Runtime
@@ -15,37 +16,38 @@ import kotlin.time.measureTimedValue
  * Parses program flags from the command line arguments, and starts the appropriate interpreter mode.
  */
 @ExperimentalTime
-fun main(mainArgs: Array<String>) {
-    var args = ""
+fun main(args: Array<String>) {
+    val cd = args[0]
+    
+    var mArgs = ""
     var debug = false
     var file = ""
     var size = 0x10000
     
-    var i = 0
+    var i = 1
     
-    while (i < mainArgs.size) {
-        val arg = mainArgs[i]
+    while (i < args.size) {
+        val arg = args[i]
         
         if (arg[0] == '-') when (arg.substring(1)) {
-            "a" -> args = mainArgs[++i]
+            "a" -> mArgs = args[++i]
             
             "d" -> debug = true
             
-            "f" -> file = mainArgs[++i]
+            "f" -> file = args[++i]
             
             "s" -> {
-                val code = mainArgs[++i]
+                val code = args[++i]
                 
                 val number = code.substring(0, code.length - 1)
                 val suffix = code[code.length - 1]
                 
                 size = when (suffix) {
-                    'K', 'k' -> ((number.toFloatOrNull() ?: error("Memory size must be a number!")) * 1000).toInt()
+                    'K', 'k' -> ((number.toFloatOrNull() ?: error("Memory size must be a number!")) * 1E3).toInt()
                     
-                    'M', 'm' -> ((number.toFloatOrNull() ?: error("Memory size must be a number!")) * 1000000).toInt()
+                    'M', 'm' -> ((number.toFloatOrNull() ?: error("Memory size must be a number!")) * 1E6).toInt()
                     
-                    'B', 'b' -> ((number.toFloatOrNull()
-                        ?: error("Memory size must be a number!")) * 1000000000).toInt()
+                    'B', 'b' -> ((number.toFloatOrNull() ?: error("Memory size must be a number!")) * 1E9).toInt()
                     
                     else     -> code.toIntOrNull() ?: error("Memory size must be a number!")
                 }
@@ -57,13 +59,13 @@ fun main(mainArgs: Array<String>) {
     
     val repl = file.isEmpty()
     
-    val config = Config(args, debug, repl, size)
+    val config = Config(mArgs, debug, repl, size)
     
     if (repl) {
         repl(config)
     }
     else {
-        file(config, file)
+        file(config, cd, file)
     }
 }
 
@@ -74,7 +76,8 @@ fun main(mainArgs: Array<String>) {
  */
 @ExperimentalTime
 private fun repl(config: Config) {
-    println("""
+    println(
+        """
         ##.      .##'    .##
         ####.  .##'    .##'
         ## '####'    .##'
@@ -89,9 +92,10 @@ private fun repl(config: Config) {
          Minim  Programming
           Language V 5.1.9
           
-          """.trimIndent())
+          """.trimIndent()
+    )
     
-    val runtime = Runtime(config, mutableListOf())
+    val runtime = Runtime(config, Program.empty)
     
     do {
         print("$> ")
@@ -103,7 +107,7 @@ private fun repl(config: Config) {
             
             val source = Source("REPL", code)
             
-            val stmts = source.compile()
+            val stmts = source.create()
             
             runtime.reset(stmts)
             
@@ -113,9 +117,9 @@ private fun repl(config: Config) {
             try {
                 val source = Source("REPL", text)
                 
-                val stmts = source.compile()
+                val program = source.create()
                 
-                runtime.reset(stmts)
+                runtime.reset(program)
                 
                 measureTimedValue { runtime.run() }
             }
@@ -138,8 +142,16 @@ private fun repl(config: Config) {
  * @param path the path fo the file to read and run
  */
 @ExperimentalTime
-private fun file(config: Config, path: String) {
-    val file = File(path)
+private fun file(config: Config, cd: String, path: String) {
+    var file = File(path)
+    
+    if (!file.exists()) {
+        file = File("$cd\\$path")
+        
+        if (!file.exists()) {
+            error("The specified path does not exist!")
+        }
+    }
     
     val name = file.nameWithoutExtension
     val text = file.readText()
@@ -147,9 +159,9 @@ private fun file(config: Config, path: String) {
     val source = Source(name, text)
     
     try {
-        val stmts = source.compile()
+        val program = source.create()
         
-        val runtime = Runtime(config, stmts)
+        val runtime = Runtime(config, program)
         
         val (value, duration) = measureTimedValue { runtime.run() }
         
@@ -167,7 +179,7 @@ private fun file(config: Config, path: String) {
  * @param duration the timing of the program execution
  */
 @ExperimentalTime
-private fun printEndMessage(value: MNumber, duration: Duration) {
+private fun printEndMessage(value: MNumber<*>, duration: Duration) {
     println("\n$< $value, '${value.toChar().escaped()}' (${duration.inWholeNanoseconds / 1E9} s)\n")
 }
 

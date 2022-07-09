@@ -24,7 +24,7 @@ class Parser(private val tokens: List<Token>) {
      *
      * @return a list of all [statements][Stmt] in the file
      */
-    fun parse(): List<Stmt> {
+    fun parse(): Stmts {
         val stmts = mutableListOf<Stmt>()
         
         while (!skip(EndOfFile)) {
@@ -125,7 +125,7 @@ class Parser(private val tokens: List<Token>) {
     }
     
     /**
-     * Trys to skip an [i][SmallI] or [f][SmallF] token, and gets a [Boolean] indicating 'int mode' for certain [statements][Stmt].
+     * Tries to skip an [i][SmallI] or [f][SmallF] token, and gets a [Boolean] indicating 'int mode' for certain [statements][Stmt].
      *
      * @return `true` if an [i][SmallI] token is skipped, or `false` otherwise
      */

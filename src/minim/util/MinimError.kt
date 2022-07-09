@@ -40,7 +40,7 @@ fun invalidCharError(invalid: Char, loc: Location): Nothing =
     lexerError("Character '$invalid' is invalid!", loc)
 
 /**
- * Thrown by the [Lexer] when it lexes an invalid escape character.
+ * Thrown by the [Lexer] when it encounters an invalid escape character.
  *
  * @param invalid the invalid escape character
  * @param loc the location where this error occurred
@@ -49,7 +49,7 @@ fun invalidEscapeError(invalid: Char, loc: Location): Nothing =
     lexerError("Character escape '\\$invalid' is invalid!", loc)
 
 /**
- * Thrown by the [Lexer] when it lexes an invalid number literal.
+ * Thrown by the [Lexer] when it encounters an invalid number literal.
  *
  * @param invalid the invalid number literal
  * @param loc the location where this error occurred

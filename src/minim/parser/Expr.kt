@@ -3,6 +3,8 @@ package minim.parser
 import minim.lexer.Location
 import minim.lexer.Token
 
+typealias Exprs = List<Expr>
+
 /**
  * Subclass for all possible expressions.
  *
@@ -328,7 +330,7 @@ sealed class Expr(val loc: Location) {
      * @param loc the location of this expression
      * @param elements the elements to populate the array with
      */
-    class Array(loc: Location, val elements: List<Expr>) : Expr(loc) {
+    class Array(loc: Location, val elements: Exprs) : Expr(loc) {
         override fun <X> accept(visitor: Visitor<X>) =
             visitor.visitArrayExpr(this)
     }
