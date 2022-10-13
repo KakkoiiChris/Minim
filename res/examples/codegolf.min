@@ -1,3 +1,7 @@
+; Code Golf Entries \
+  Christian Alexander \
+  07/08/2022
+
 ; 10x10 grid of *, 37 bytes
 $<42._^++[0]%10.$<10._^[0]==100.C=-1.
 

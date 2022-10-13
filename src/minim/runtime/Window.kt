@@ -14,10 +14,10 @@ class Window(width: Int, height: Int, title: String) : KeyListener, MouseListene
     
     private val images = mutableListOf<BufferedImage>()
     
-    private val transformStack = mutableListOf<AffineTransform>()
-    
     private val buffer: BufferStrategy
     private val graphics: Graphics2D
+    
+    private val transformStack = mutableListOf<AffineTransform>()
     
     private val keys = Array(256) { Toggle() }
     private val buttons = Array(4) { Toggle() }
@@ -109,11 +109,11 @@ class Window(width: Int, height: Int, title: String) : KeyListener, MouseListene
     fun translate(x: Double, y: Double) =
         graphics.translate(x, y)
     
-    fun pushMatrix() {
+    fun pushState() {
         transformStack.add(0, graphics.transform)
     }
     
-    fun popMatrix() {
+    fun popState() {
         transformStack.removeAt(0)
         
         if (transformStack.isEmpty()) {

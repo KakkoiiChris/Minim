@@ -1,6 +1,9 @@
 package minim.runtime
 
 import minim.util.toFloat
+import java.util.Calendar
+import java.util.Date
+import java.util.TimeZone
 import kotlin.math.*
 
 /**
@@ -11,6 +14,7 @@ object Library : MutableMap<String, Library.Function> by mutableMapOf() {
     
     init {
         addGeneral()
+        addTime()
         addMath()
         addText()
         addGFX()
@@ -20,8 +24,6 @@ object Library : MutableMap<String, Library.Function> by mutableMapOf() {
      * Adds all the general functions to the library map.
      */
     private fun addGeneral() {
-        this["time"] = Function { _, _ -> floatArrayOf(System.currentTimeMillis() / 1000F) }
-        
         this["wait"] = Function(1) { _, args ->
             val (s) = args
             
@@ -29,6 +31,16 @@ object Library : MutableMap<String, Library.Function> by mutableMapOf() {
             
             floatArrayOf()
         }
+    }
+    
+    private fun addTime() {
+        this["now"] = Function { _, _ -> floatArrayOf(System.currentTimeMillis() / 1000F) }
+        this["second"] = Function { _, _ -> floatArrayOf(Calendar.getInstance().get(Calendar.SECOND).toFloat()) }
+        this["minute"] = Function { _, _ -> floatArrayOf(Calendar.getInstance().get(Calendar.MINUTE).toFloat())  }
+        this["hour"] = Function { _, _ -> floatArrayOf(Calendar.getInstance().get(Calendar.HOUR).toFloat())  }
+        this["day"] = Function { _, _ -> floatArrayOf(Calendar.getInstance().get(Calendar.DAY_OF_MONTH).toFloat())  }
+        this["month"] = Function { _, _ -> floatArrayOf(Calendar.getInstance().get(Calendar.MONTH).toFloat())  }
+        this["year"] = Function { _, _ -> floatArrayOf(Calendar.getInstance().get(Calendar.YEAR).toFloat())  }
     }
     
     /**
@@ -433,14 +445,14 @@ object Library : MutableMap<String, Library.Function> by mutableMapOf() {
             floatArrayOf()
         }
         
-        this["gfxpushmatrix"] = Function { _, _ ->
-            window.pushMatrix()
+        this["gfxpushstate"] = Function { _, _ ->
+            window.pushState()
             
             floatArrayOf()
         }
         
-        this["gfxpopmatrix"] = Function { _, _ ->
-            window.popMatrix()
+        this["gfxpopstate"] = Function { _, _ ->
+            window.popState()
             
             floatArrayOf()
         }
@@ -490,6 +502,22 @@ object Library : MutableMap<String, Library.Function> by mutableMapOf() {
             
             floatArrayOf()
         }
+    
+        this["gfxdrawroundrect"] = Function(6) { _, args ->
+            val (x, y, width, height, arcWidth, arcHeight) = args
+        
+            window.drawRoundRect(x.toInt(), y.toInt(), width.toInt(), height.toInt(), arcWidth.toInt(), arcHeight.toInt())
+        
+            floatArrayOf()
+        }
+    
+        this["gfxfillroundrect"] = Function(6) { _, args ->
+            val (x, y, width, height, arcWidth, arcHeight) = args
+        
+            window.fillRoundRect(x.toInt(), y.toInt(), width.toInt(), height.toInt(), arcWidth.toInt(), arcHeight.toInt())
+        
+            floatArrayOf()
+        }
     }
     
     /**
@@ -509,3 +537,5 @@ object Library : MutableMap<String, Library.Function> by mutableMapOf() {
             method(runtime, args)
     }
 }
+
+private operator fun FloatArray.component6() = this[5]
