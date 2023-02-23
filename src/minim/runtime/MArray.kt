@@ -47,18 +47,18 @@ class MArray(private val elements: List<Reference>) : List<Reference> by element
     fun printDebugTable() {
         print("Print Debug Table? ")
         
-        if ((readLine() ?: "").matches("[Yy]([Ee][Ss])?".toRegex())) {
+        if ((readlnOrNull() ?: "").matches("[Yy]([Ee][Ss])?".toRegex())) {
             print("\nStart index (defaults to 0): ")
             
-            val start = readLine()?.takeIf { it.isNotEmpty() }?.toInt() ?: 0
+            val start = readln().takeIf { it.isNotEmpty() }?.toInt() ?: 0
             
             print("\nEnd index (defaults to $size): ")
             
-            val end = readLine()?.takeIf { it.isNotEmpty() }?.toInt() ?: size
+            val end = readln().takeIf { it.isNotEmpty() }?.toInt() ?: size
             
             print("\nIndices per row (defaults to 100): ")
             
-            val step = readLine()?.takeIf { it.isNotEmpty() }?.toInt() ?: 100
+            val step = readln().takeIf { it.isNotEmpty() }?.toInt() ?: 100
             
             println()
             

@@ -2,12 +2,11 @@
   Christian Alexander \
   07/27/2021
 
-[0] = 1.
-[1 :] = "Nth fibonacci number? ".
-_> 1.
-    $< [[0]++].
-    _< ?[[0]].
+[] = 1 & "Nth fibonacci number? ".
 _> 0.
+    $< [[0]++].
+    _^ ![[0]].
+_< 0.
 
 #> [0].
 

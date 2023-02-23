@@ -100,16 +100,16 @@ private fun repl(config: Config) {
     do {
         print("$> ")
         
-        val text = readLine()?.takeIf { it.isNotBlank() } ?: break
+        val text = readln().takeIf { it.isNotBlank() } ?: break
         
         val (value, duration) = try {
             val code = "[0] = $text."
             
             val source = Source("REPL", code)
             
-            val stmts = source.create()
+            val program = source.create()
             
-            runtime.reset(stmts)
+            runtime.reset(program)
             
             measureTimedValue { runtime.run() }
         }

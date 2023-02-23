@@ -19,3 +19,6 @@ C--.
 
 ; Hello World, 42 bytes
 []="\r!dlroW ,olleH".$<[[0]--]._^![0].C=0.
+
+; Print the past 120 years
+[]="xyear".\<1.\>[1].#<[1]--i.$<32._^!--[0].C-=4.

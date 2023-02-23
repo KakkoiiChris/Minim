@@ -771,7 +771,7 @@ class Runtime(private val config: Config, private var program: Program) : Expr.V
     override fun visitNumberInStmt(stmt: Stmt.NumberIn) {
         val reference = visit(stmt.expr) as? Reference ?: invalidStatementArgumentError(stmt.expr.loc)
         
-        val input = readLine()?.takeIf { it.isNotEmpty() } ?: ""
+        val input = readln().takeIf { it.isNotEmpty() } ?: ""
         
         reference.value = if (stmt.isIntMode)
             MNumber.Int(input.toIntOrNull() ?: invalidNumberInputError(input, stmt.loc))
@@ -804,7 +804,7 @@ class Runtime(private val config: Config, private var program: Program) : Expr.V
      */
     override fun visitTextInStmt(stmt: Stmt.TextIn) {
         if (inputQueue.isEmpty()) {
-            val input = readLine()?.takeIf { it.isNotEmpty() } ?: return
+            val input = readln().takeIf { it.isNotEmpty() } ?: return
             
             if (stmt.isIntMode) {
                 inputQueue.addAll(input.map { MNumber.Int(it.code) } + MNumber.Int())

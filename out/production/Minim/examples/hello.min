@@ -2,10 +2,10 @@
   Christian Alexander \
   06/22/2021
 
-[0] = 1.
-[1 :] = "Hello, World!\n".
+[] = 1 & "Hello, World!\n".
 
 _> 0.
     $< [[0]++].
+    
     _^ ![[0]].
 _< 0.
