@@ -20,9 +20,7 @@ data class Source(val name: String, val text: String) {
     fun create(): Program {
         val lexer = Lexer(this)
         
-        val tokens = lexer.lex()
-        
-        val parser = Parser(tokens)
+        val parser = Parser(lexer)
         
         val stmts = parser.parse()
         
