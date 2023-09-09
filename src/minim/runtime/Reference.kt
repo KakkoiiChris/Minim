@@ -1,25 +1,25 @@
 package minim.runtime
 
 /**
- * A container that holds a reference to a single [MNumber].
+ * A container that holds a reference to a single [MinimNumber].
  *
  * @param value the value to hold
  */
-class Reference(var value: MNumber<*> = MNumber.Float()) {
+class Reference(var value: MinimNumber<*> = MinimNumber.Float()) {
     /**
      * Increases [value] by 1, and gets the new value.
      *
      * @return [value] + 1
      */
     fun preIncrement() = when (value) {
-        is MNumber.Float -> {
-            value = MNumber.Float(value.value as Float + 1F)
+        is MinimNumber.Float -> {
+            value = MinimNumber.Float(value.value as Float + 1F)
             
             value
         }
         
-        is MNumber.Int   -> {
-            value = MNumber.Int(value.value as Int + 1)
+        is MinimNumber.Int   -> {
+            value = MinimNumber.Int(value.value as Int + 1)
             
             value
         }
@@ -31,14 +31,14 @@ class Reference(var value: MNumber<*> = MNumber.Float()) {
      * @return [value] - 1
      */
     fun preDecrement() = when (value) {
-        is MNumber.Float -> {
-            value = MNumber.Float(value.value as Float - 1F)
+        is MinimNumber.Float -> {
+            value = MinimNumber.Float(value.value as Float - 1F)
             
             value
         }
         
-        is MNumber.Int   -> {
-            value = MNumber.Int(value.value as Int - 1)
+        is MinimNumber.Int   -> {
+            value = MinimNumber.Int(value.value as Int - 1)
             
             value
         }
@@ -49,7 +49,7 @@ class Reference(var value: MNumber<*> = MNumber.Float()) {
      *
      * @return ?[value]
      */
-    fun preNarrow(): MNumber<*> {
+    fun preNarrow(): MinimNumber<*> {
         value = value.narrow()
         
         return value
@@ -60,7 +60,7 @@ class Reference(var value: MNumber<*> = MNumber.Float()) {
      *
      * @return ![value]
      */
-    fun preToggle(): MNumber<*> {
+    fun preToggle(): MinimNumber<*> {
         value = value.not()
         
         return value
@@ -71,7 +71,7 @@ class Reference(var value: MNumber<*> = MNumber.Float()) {
      *
      * @return ~[value]
      */
-    fun preInvert(): MNumber<*> {
+    fun preInvert(): MinimNumber<*> {
         value = value.inv()
         
         return value
@@ -83,18 +83,18 @@ class Reference(var value: MNumber<*> = MNumber.Float()) {
      * @return [value]
      */
     fun postIncrement() = when (value) {
-        is MNumber.Float -> {
+        is MinimNumber.Float -> {
             val before = value
             
-            value = MNumber.Float(value.value as Float + 1F)
+            value = MinimNumber.Float(value.value as Float + 1F)
             
             before
         }
         
-        is MNumber.Int   -> {
+        is MinimNumber.Int   -> {
             val before = value
             
-            value = MNumber.Int(value.value as Int + 1)
+            value = MinimNumber.Int(value.value as Int + 1)
             
             before
         }
@@ -106,18 +106,18 @@ class Reference(var value: MNumber<*> = MNumber.Float()) {
      * @return [value]
      */
     fun postDecrement() = when (value) {
-        is MNumber.Float -> {
+        is MinimNumber.Float -> {
             val before = value
             
-            value = MNumber.Float(value.value as Float - 1F)
+            value = MinimNumber.Float(value.value as Float - 1F)
             
             before
         }
         
-        is MNumber.Int   -> {
+        is MinimNumber.Int   -> {
             val before = value
             
-            value = MNumber.Int(value.value as Int - 1)
+            value = MinimNumber.Int(value.value as Int - 1)
             
             before
         }
@@ -128,7 +128,7 @@ class Reference(var value: MNumber<*> = MNumber.Float()) {
      *
      * @return [value]
      */
-    fun postNarrow(): MNumber<*> {
+    fun postNarrow(): MinimNumber<*> {
         val before = value
         
         value = value.narrow()
@@ -141,7 +141,7 @@ class Reference(var value: MNumber<*> = MNumber.Float()) {
      *
      * @return [value]
      */
-    fun postToggle(): MNumber<*> {
+    fun postToggle(): MinimNumber<*> {
         val before = value
         
         value = value.not()
@@ -154,7 +154,7 @@ class Reference(var value: MNumber<*> = MNumber.Float()) {
      *
      * @return [value]
      */
-    fun postInvert(): MNumber<*> {
+    fun postInvert(): MinimNumber<*> {
         val before = value
         
         value = value.inv()
@@ -169,28 +169,28 @@ class Reference(var value: MNumber<*> = MNumber.Float()) {
      *
      * @return [x]
      */
-    fun assign(x: MNumber<*>): MNumber<*> {
+    fun assign(x: MinimNumber<*>): MinimNumber<*> {
         value = x
         
         return x
     }
     
     /**
-     * Sets this reference to a new [MNumber.Float] with the given value.
+     * Sets this reference to a new [MinimNumber.Float] with the given value.
      *
      * @param float the number to refer to
      */
     fun set(float: Float) {
-        value = MNumber.Float(float)
+        value = MinimNumber.Float(float)
     }
     
     /**
-     * Sets this reference to a new [MNumber.Int] with the given value.
+     * Sets this reference to a new [MinimNumber.Int] with the given value.
      *
      * @param int the number to refer to
      */
     fun set(int: Int) {
-        value = MNumber.Int(int)
+        value = MinimNumber.Int(int)
     }
     
     /**

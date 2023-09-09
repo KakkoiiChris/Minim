@@ -10,7 +10,7 @@ import kotlin.math.min
  *
  * @constructor an array instance with specified elements
  */
-class MArray(private val elements: List<Reference>) : List<Reference> by elements {
+class MinimArray(private val elements: List<Reference>) : List<Reference> by elements {
     /**
      * Creates an array of zeroes.
      *
@@ -18,8 +18,8 @@ class MArray(private val elements: List<Reference>) : List<Reference> by element
      *
      * @constructor an array instance of zeroes of specified size
      */
-    constructor(size: Int) : this(List(size) { Reference(MNumber.Float()) })
-    
+    constructor(size: Int) : this(List(size) { Reference(MinimNumber.Float()) })
+
     /**
      * Gets a string from this array starting from the specified index until the next zero.
      *
@@ -29,16 +29,16 @@ class MArray(private val elements: List<Reference>) : List<Reference> by element
      */
     fun scanString(start: Int) = buildString {
         var i = start
-        
+
         while (i < size) {
-            val element = elements[i++].value.toChar()
-            
-            if (element == '\u0000') break
-            
-            append(element)
+            val char = elements[i++].value.toChar()
+
+            if (char == '\u0000') break
+
+            append(char)
         }
     }
-    
+
     /**
      * Prints an interactive table for debugging purposes.
      *
@@ -46,54 +46,61 @@ class MArray(private val elements: List<Reference>) : List<Reference> by element
      */
     fun printDebugTable() {
         print("Print Debug Table? ")
-        
-        if ((readlnOrNull() ?: "").matches("[Yy]([Ee][Ss])?".toRegex())) {
+
+        if (readln().matches("(?i)Y(es)?".toRegex())) {
             print("\nStart index (defaults to 0): ")
-            
+
             val start = readln().takeIf { it.isNotEmpty() }?.toInt() ?: 0
-            
+
             print("\nEnd index (defaults to $size): ")
-            
+
             val end = readln().takeIf { it.isNotEmpty() }?.toInt() ?: size
-            
+
             print("\nIndices per row (defaults to 100): ")
-            
+
             val step = readln().takeIf { it.isNotEmpty() }?.toInt() ?: 100
-            
+
             println()
-            
+
             var from = start
             var to = min(start + step, end)
-            
+
             while (from < end) {
-                val slice = MArray(slice(from until to))
-                
-                val widths = IntArray(slice.size)
-                
-                for (i in slice.indices) {
+                val slice = MinimArray(slice(from until to))
+
+                val widths = IntArray(slice.size) { i ->
                     val widthI = (i + from).toString().length
                     val widthN = slice[i].value.toString().length
                     val widthC = slice[i].value.toChar().escaped().length
-                    
-                    widths[i] = maxOf(widthI, widthN, widthC)
+
+                    maxOf(widthI, widthN, widthC)
                 }
-                
-                println("[$from -> $to]")
-                
-                println(List(slice.size) { i ->
-                    (i + from).toString().padStart(widths[i])
-                }.joinToString(prefix = "Index | ", separator = " | "))
-                
-                println(slice.mapIndexed { i, e ->
-                    e.value.toString().padStart(widths[i])
-                }.joinToString(prefix = "Value | ", separator = " | "))
-                
-                println(slice.mapIndexed { i, e ->
-                    e.value.toChar().escaped().padStart(widths[i])
-                }.joinToString(prefix = " Char | ", separator = " | "))
-                
-                println()
-                
+
+                val indices = slice
+                    .indices
+                    .joinToString(prefix = "Index | ", separator = " | ") { i ->
+                        (i + from).toString().padStart(widths[i])
+                    }
+
+                val values = slice
+                    .mapIndexed { i, e ->
+                        e.value.toString().padStart(widths[i])
+                    }
+                    .joinToString(prefix = "Value | ", separator = " | ")
+
+                val chars = slice
+                    .mapIndexed { i, e ->
+                        e.value.toChar().escaped().padStart(widths[i])
+                    }
+                    .joinToString(prefix = " Char | ", separator = " | ")
+
+                println("""
+                    [$from -> $to]
+                    $indices
+                    $values
+                    $chars
+                    """.trimIndent())
+
                 from = min(from + step, end)
                 to = min(to + step, end)
             }
@@ -117,4 +124,4 @@ class MArray(private val elements: List<Reference>) : List<Reference> by element
  * @return Ex. "Hello" -> '{ 72, 101, 108, 108, 111, 0 }'
  */
 fun String.toMArray() =
-    MArray(map { Reference(MNumber.Int(it.code)) } + Reference(MNumber.Int()))
+    MinimArray(map { Reference(MinimNumber.Int(it.code)) } + Reference(MinimNumber.Int()))

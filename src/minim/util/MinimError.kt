@@ -2,7 +2,7 @@ package minim.util
 
 import minim.lexer.Lexer
 import minim.lexer.Location
-import minim.lexer.Token
+import minim.lexer.Type
 import minim.parser.Expr
 import minim.parser.Parser
 import minim.runtime.Runtime
@@ -89,8 +89,8 @@ fun invalidStatementHeaderError(invalid: String, loc: Location): Nothing =
  * @param invalid the invalid token type
  * @param loc the location where this error occurred
  */
-fun invalidTerminalError(invalid: Token.Type, loc: Location): Nothing =
-    parserError("Terminal beginning with '$invalid' is invalid!", loc)
+fun invalidTerminalError(invalid: Type, loc: Location): Nothing =
+    parserError("Terminal beginning with '${invalid.rep}' is invalid!", loc)
 
 /**
  * Thrown when the [Parser] does not encounter an expression for the relative range count.
@@ -107,8 +107,8 @@ fun noRelativeRangeCountError(loc: Location): Nothing =
  * @param expected the expected token type
  * @param loc the location where this error occurred
  */
-fun unexpectedTypeError(invalid: Token.Type, expected: Token.Type, loc: Location): Nothing =
-    parserError("Type '$invalid' is invalid; expected '$expected'!", loc)
+fun unexpectedTypeError(invalid: Type, expected: Type, loc: Location): Nothing =
+    parserError("Type '${invalid.rep}' is invalid; expected '${expected.rep}'!", loc)
 
 /**
  * Any error thrown by the [Runtime].

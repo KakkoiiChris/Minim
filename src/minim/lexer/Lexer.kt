@@ -1,6 +1,5 @@
 package minim.lexer
 
-import minim.lexer.Token.Type.*
 import minim.parser.Expr
 import minim.util.Source
 import minim.util.invalidCharError
@@ -97,7 +96,7 @@ class Lexer(private val source: Source) : Iterator<Token> {
             }
         }
 
-        return Token(here(), EndOfFile)
+        return Token(here(), Symbol.END_OF_FILE)
     }
 
     /**
@@ -246,10 +245,10 @@ class Lexer(private val source: Source) : Iterator<Token> {
     /**
      * Lexes a single string literal.
      *
-     * @return a list of [Value] tokens based on the character values, including a null terminator, separated by [Comma] tokens, and surrounded by a [LeftBrace] and [RightBrace] token
+     * @return a list of [Value] tokens based on the character values, including a null terminator, separated by [comma][Symbol.COMMA] tokens, and surrounded by a [left brace][Symbol.LEFT_BRACE] and [right brace][Symbol.RIGHT_BRACE] token
      */
     private fun splitString() {
-        stringTokens.addLast(Token(here(), LeftBrace))
+        stringTokens.addLast(Token(here(), Symbol.LEFT_BRACE))
 
         skip('"')
 
@@ -293,12 +292,12 @@ class Lexer(private val source: Source) : Iterator<Token> {
                 c
             }
 
-            stringTokens.addLast(Token(location, Value, char.code.toFloat()))
-            stringTokens.addLast(Token(location, Comma))
+            stringTokens.addLast(Token(location, Value(char.code.toFloat())))
+            stringTokens.addLast(Token(location, Symbol.COMMA))
         }
 
-        stringTokens.addLast(Token(here(), Value, 0F))
-        stringTokens.addLast(Token(here(), RightBrace))
+        stringTokens.addLast(Token(here(), Value(0F)))
+        stringTokens.addLast(Token(here(), Symbol.RIGHT_BRACE))
 
         skip('"')
     }
@@ -368,7 +367,7 @@ class Lexer(private val source: Source) : Iterator<Token> {
             }
         }
 
-        return Token(loc, Value, value)
+        return Token(loc, Value(value))
     }
 
     /**
@@ -384,19 +383,19 @@ class Lexer(private val source: Source) : Iterator<Token> {
         step()
 
         if (char in Expr.DynamicLiteral.Name) {
-            return Token(loc, Dynamic, char.code.toFloat())
+            return Token(loc, Dynamic(char))
         }
 
         return when (char) {
-            'i'  -> Token(loc, SmallI)
+            'i'  -> Token(loc, Symbol.SMALL_I)
 
-            'f'  -> Token(loc, SmallF)
+            'f'  -> Token(loc, Symbol.SMALL_F)
 
-            's'  -> Token(loc, SmallS)
+            's'  -> Token(loc, Symbol.SMALL_S)
 
-            'M'  -> Token(loc, BigM)
+            'M'  -> Token(loc, Symbol.BIG_M)
 
-            else -> Token(loc, Value, literals[char] ?: invalidCharError(char, loc))
+            else -> Token(loc, Value(literals[char] ?: invalidCharError(char, loc)))
         }
     }
 
@@ -463,7 +462,7 @@ class Lexer(private val source: Source) : Iterator<Token> {
 
         step()
 
-        return Token(loc, Value, char.code.toFloat())
+        return Token(loc, Value(char.code.toFloat()))
     }
 
     /**
@@ -476,153 +475,153 @@ class Lexer(private val source: Source) : Iterator<Token> {
 
         val op = when {
             skip('+')  -> when {
-                skip('+') -> DoublePlus
+                skip('+') -> Symbol.DOUBLE_PLUS
 
-                skip('=') -> PlusEqual
+                skip('=') -> Symbol.PLUS_EQUAL
 
-                else      -> Plus
+                else      -> Symbol.PLUS
             }
 
             skip('-')  -> when {
-                skip('-') -> DoubleMinus
+                skip('-') -> Symbol.DOUBLE_DASH
 
-                skip('=') -> MinusEqual
+                skip('=') -> Symbol.DASH_EQUAL
 
-                else      -> Minus
+                else      -> Symbol.DASH
             }
 
             skip('*')  -> when {
-                skip('=') -> StarEqual
+                skip('=') -> Symbol.STAR_EQUAL
 
-                else      -> Star
+                else      -> Symbol.STAR
             }
 
             skip('/')  -> when {
-                skip('=') -> SlashEqual
+                skip('=') -> Symbol.SLASH_EQUAL
 
-                else      -> Slash
+                else      -> Symbol.SLASH
             }
 
             skip('%')  -> when {
-                skip('=') -> PercentEqual
+                skip('=') -> Symbol.PERCENT_EQUAL
 
-                else      -> Percent
+                else      -> Symbol.PERCENT
             }
 
-            skip('(')  -> LeftParen
+            skip('(')  -> Symbol.LEFT_PAREN
 
-            skip(')')  -> RightParen
+            skip(')')  -> Symbol.RIGHT_PAREN
 
-            skip('[')  -> LeftSquare
+            skip('[')  -> Symbol.LEFT_SQUARE
 
-            skip(']')  -> RightSquare
+            skip(']')  -> Symbol.RIGHT_SQUARE
 
-            skip('{')  -> LeftBrace
+            skip('{')  -> Symbol.LEFT_BRACE
 
-            skip('}')  -> RightBrace
+            skip('}')  -> Symbol.RIGHT_BRACE
 
             skip('?')  -> when {
-                skip('?') -> DoubleQuestion
+                skip('?') -> Symbol.DOUBLE_QUESTION
 
-                else      -> Question
+                else      -> Symbol.QUESTION
             }
 
-            skip(':')  -> Colon
+            skip(':')  -> Symbol.COLON
 
             skip('=')  -> when {
-                skip('=') -> DoubleEqual
+                skip('=') -> Symbol.DOUBLE_EQUAL
 
-                else      -> EqualSign
+                else      -> Symbol.EQUAL
             }
 
             skip('<')  -> when {
                 skip('<') -> when {
-                    skip('=') -> DoubleLessEqual
+                    skip('=') -> Symbol.DOUBLE_LESS_EQUAL
 
-                    else      -> DoubleLess
+                    else      -> Symbol.DOUBLE_LESS
                 }
 
-                skip('>') -> LessGreater
+                skip('>') -> Symbol.LESS_GREATER
 
-                skip('=') -> LessEqualSign
+                skip('=') -> Symbol.LESS_EQUAL
 
-                else      -> LessSign
+                else      -> Symbol.LESS
             }
 
             skip('>')  -> when {
                 skip('>') -> when {
                     skip('>') -> when {
-                        skip('=') -> TripleGreaterEqual
+                        skip('=') -> Symbol.TRIPLE_GREATER_EQUAL
 
-                        else      -> TripleGreater
+                        else      -> Symbol.TRIPLE_GREATER
                     }
 
-                    skip('=') -> DoubleGreaterEqual
+                    skip('=') -> Symbol.DOUBLE_GREATER_EQUAL
 
-                    else      -> DoubleGreater
+                    else      -> Symbol.DOUBLE_GREATER
                 }
 
-                skip('=') -> GreaterEqualSign
+                skip('=') -> Symbol.GREATER_EQUAL
 
-                else      -> GreaterSign
+                else      -> Symbol.GREATER
             }
 
 
             skip('&')  -> when {
                 skip('&') -> when {
-                    skip('=') -> DoubleAmpersandEqual
+                    skip('=') -> Symbol.DOUBLE_AMPERSAND_EQUAL
 
-                    else      -> DoubleAmpersand
+                    else      -> Symbol.DOUBLE_AMPERSAND
                 }
 
-                skip('=') -> AndEqual
+                skip('=') -> Symbol.AMPERSAND_EQUAL
 
-                else      -> Ampersand
+                else      -> Symbol.AMPERSAND
             }
 
             skip('|')  -> when {
                 skip('|') -> when {
-                    skip('=') -> DoublePipeEqual
+                    skip('=') -> Symbol.DOUBLE_PIPE_EQUAL
 
-                    else      -> DoublePipe
+                    else      -> Symbol.DOUBLE_PIPE
                 }
 
-                skip('=') -> PipeEqual
+                skip('=') -> Symbol.PIPE_EQUAL
 
-                else      -> Pipe
+                else      -> Symbol.PIPE
             }
 
             skip('^')  -> when {
-                skip('=') -> CaretEqual
+                skip('=') -> Symbol.CARET_EQUAL
 
-                else      -> Caret
+                else      -> Symbol.CARET
             }
 
             skip('!')  -> when {
-                skip('!') -> DoubleExclamation
+                skip('!') -> Symbol.DOUBLE_BANG
 
-                else      -> Exclamation
+                else      -> Symbol.BANG
             }
 
             skip('~')  -> when {
-                skip('~') -> DoubleTilde
+                skip('~') -> Symbol.DOUBLE_TILDE
 
-                else      -> Tilde
+                else      -> Symbol.TILDE
             }
 
-            skip('@')  -> At
+            skip('@')  -> Symbol.AT
 
-            skip('#')  -> Number
+            skip('#')  -> Symbol.POUND
 
-            skip('$')  -> Dollar
+            skip('$')  -> Symbol.DOLLAR
 
-            skip('_')  -> Underscore
+            skip('_')  -> Symbol.UNDERSCORE
 
-            skip('\\') -> Backslash
+            skip('\\') -> Symbol.BACKSLASH
 
-            skip(',')  -> Comma
+            skip(',')  -> Symbol.COMMA
 
-            skip('.')  -> Dot
+            skip('.')  -> Symbol.DOT
 
             else       -> invalidCharError(peek(), here())
         }
