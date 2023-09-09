@@ -1,11 +1,9 @@
 package minim.parser
 
-import minim.lexer.Lexer
-import minim.lexer.Location
-import minim.lexer.Token
-import minim.lexer.Token.Type.*
+import minim.lexer.*
 import minim.parser.Expr.Binary.Operator.*
 import minim.util.*
+import kotlin.reflect.KClass
 
 /**
  * The second stage of the interpreter; a recursive descent parser that parses a list of [statements][Stmt] from the given [tokens][Token].
@@ -23,7 +21,7 @@ class Parser(private val lexer: Lexer) {
     fun parse(): Stmts {
         val stmts = mutableListOf<Stmt>()
 
-        while (!skip(EndOfFile)) {
+        while (!skip(Symbol.END_OF_FILE)) {
             stmts.add(stmt())
         }
 
@@ -54,7 +52,7 @@ class Parser(private val lexer: Lexer) {
      *
      * @return `true` if any [type][Token.Type] matches, or `false` otherwise
      */
-    private fun match(vararg types: Token.Type) =
+    private fun match(vararg types: Type) =
         types.any { it == peek().type }
 
     /**
@@ -64,7 +62,7 @@ class Parser(private val lexer: Lexer) {
      *
      * @return `true` if the [type] matches, or `false` otherwise
      */
-    private fun skip(type: Token.Type) =
+    private fun skip(type: Type) =
         if (peek().type == type) {
             step()
             true
@@ -78,11 +76,41 @@ class Parser(private val lexer: Lexer) {
      *
      * @param type the [type][Token.Type] to match
      */
-    private fun mustSkip(type: Token.Type) {
+    private fun mustSkip(type: Type) {
         if (!skip(type)) {
             unexpectedTypeError(peek().type, type, here())
         }
     }
+
+    private fun <T : Type> match(`class`: KClass<T>) =
+        `class`.isInstance(peek().type)
+
+    /**
+     * Gets whether the given [token type][type] matches the [current token's][peek] [type][Token.Type], and [advances][step] the parser if it does.
+     *
+     * @param type the [type][Token.Type] to match
+     *
+     * @return `true` if the [type] matches, or `false` otherwise
+     */
+    private inline fun <reified T : Type> get(): T? {
+        val type = peek().type
+
+        return if (type is T) {
+            step()
+            type
+        }
+        else {
+            null
+        }
+    }
+
+    /**
+     * Tries to [skip] the given [type], and throws an [error][unexpectedTypeError] if it didn't match.
+     *
+     * @param type the [type][Token.Type] to match
+     */
+    private inline fun <reified T : Type> mustGet(): T =
+        get<T>() ?: TODO("CANNOT GET")//unexpectedTypeError(peek().type, type, here())
 
     /**
      * Gets the [current token's][peek] [Location].
@@ -99,37 +127,37 @@ class Parser(private val lexer: Lexer) {
      */
     private fun stmt(): Stmt {
         val stmt = when {
-            match(Number)     -> numeric()
+            match(Symbol.POUND)      -> numeric()
 
-            match(Dollar)     -> text()
+            match(Symbol.DOLLAR)     -> text()
 
-            match(Underscore) -> control()
+            match(Symbol.UNDERSCORE) -> control()
 
-            match(Backslash)  -> system()
+            match(Symbol.BACKSLASH)  -> system()
 
-            match(BigM)       -> memory()
+            match(Symbol.BIG_M)      -> memory()
 
-            match(Dot)        -> Stmt.None(here())
+            match(Symbol.DOT)        -> Stmt.None(here())
 
-            else              -> expression()
+            else                     -> expression()
         }
 
-        mustSkip(Dot)
+        mustSkip(Symbol.DOT)
 
         return stmt
     }
 
     /**
-     * Tries to skip an [i][SmallI] or [f][SmallF] token, and gets a [Boolean] indicating 'int mode' for certain [statements][Stmt].
+     * Tries to skip an [i][Symbol.SMALL_I] or [f][Symbol.SMALL_F] token, and gets a [Boolean] indicating 'int mode' for certain [statements][Stmt].
      *
-     * @return `true` if an [i][SmallI] token is skipped, or `false` otherwise
+     * @return `true` if an [i][Symbol.SMALL_I] token is skipped, or `false` otherwise
      */
     private fun isIntMode() = when {
-        skip(SmallI) -> true
+        skip(Symbol.SMALL_I) -> true
 
-        skip(SmallF) -> false
+        skip(Symbol.SMALL_F) -> false
 
-        else         -> false
+        else                 -> false
     }
 
     /**
@@ -140,14 +168,14 @@ class Parser(private val lexer: Lexer) {
     private fun numeric(): Stmt {
         val loc = here()
 
-        mustSkip(Number)
+        mustSkip(Symbol.POUND)
 
         return when {
-            skip(LessSign)    -> Stmt.NumberOut(loc, isIntMode(), expr())
+            skip(Symbol.LESS)    -> Stmt.NumberOut(loc, isIntMode(), expr())
 
-            skip(GreaterSign) -> Stmt.NumberIn(loc, isIntMode(), expr())
+            skip(Symbol.GREATER) -> Stmt.NumberIn(loc, isIntMode(), expr())
 
-            else              -> invalidStatementHeaderError("#${peek().type}", loc)
+            else                 -> invalidStatementHeaderError("#${peek().type}", loc)
         }
     }
 
@@ -159,16 +187,16 @@ class Parser(private val lexer: Lexer) {
     private fun text(): Stmt {
         val loc = here()
 
-        mustSkip(Dollar)
+        mustSkip(Symbol.DOLLAR)
 
         return when {
-            skip(LessSign)    -> Stmt.TextOut(loc, expr())
+            skip(Symbol.LESS)    -> Stmt.TextOut(loc, expr())
 
-            skip(GreaterSign) -> Stmt.TextIn(loc, isIntMode(), expr())
+            skip(Symbol.GREATER) -> Stmt.TextIn(loc, isIntMode(), expr())
 
-            skip(Exclamation) -> Stmt.TextFlush(loc)
+            skip(Symbol.BANG)    -> Stmt.TextFlush(loc)
 
-            else              -> invalidStatementHeaderError("\$${peek().type}", loc)
+            else                 -> invalidStatementHeaderError("\$${peek().type}", loc)
         }
     }
 
@@ -180,20 +208,20 @@ class Parser(private val lexer: Lexer) {
     private fun control(): Stmt {
         val loc = here()
 
-        mustSkip(Underscore)
+        mustSkip(Symbol.UNDERSCORE)
 
         return when {
-            skip(LessSign)    -> Stmt.Goto(loc, expr())
+            skip(Symbol.LESS)    -> Stmt.Goto(loc, expr())
 
-            skip(GreaterSign) -> Stmt.Label(loc, expr())
+            skip(Symbol.GREATER) -> Stmt.Label(loc, expr())
 
-            skip(Caret)       -> Stmt.Jump(loc, expr())
+            skip(Symbol.CARET)   -> Stmt.Jump(loc, expr())
 
-            skip(Plus)        -> Stmt.Gosub(loc, expr())
+            skip(Symbol.PLUS)    -> Stmt.Gosub(loc, expr())
 
-            skip(Minus)       -> Stmt.Return(loc)
+            skip(Symbol.DASH)    -> Stmt.Return(loc)
 
-            else              -> invalidStatementHeaderError("_${peek().type}", loc)
+            else                 -> invalidStatementHeaderError("_${peek().type}", loc)
         }
     }
 
@@ -205,18 +233,18 @@ class Parser(private val lexer: Lexer) {
     private fun system(): Stmt {
         val loc = here()
 
-        mustSkip(Backslash)
+        mustSkip(Symbol.BACKSLASH)
 
         return when {
-            skip(LessSign)    -> Stmt.SystemArg(loc, expr())
+            skip(Symbol.LESS)    -> Stmt.SystemArg(loc, expr())
 
-            skip(GreaterSign) -> Stmt.SystemYield(loc, isIntMode(), expr())
+            skip(Symbol.GREATER) -> Stmt.SystemYield(loc, isIntMode(), expr())
 
-            skip(At)          -> Stmt.SystemCall(loc)
+            skip(Symbol.AT)      -> Stmt.SystemCall(loc)
 
-            skip(Exclamation) -> Stmt.SystemFlush(loc)
+            skip(Symbol.BANG)    -> Stmt.SystemFlush(loc)
 
-            else              -> invalidStatementHeaderError("\\${peek().type}", loc)
+            else                 -> invalidStatementHeaderError("\\${peek().type}", loc)
         }
     }
 
@@ -228,20 +256,20 @@ class Parser(private val lexer: Lexer) {
     private fun memory(): Stmt {
         val loc = here()
 
-        mustSkip(BigM)
+        mustSkip(Symbol.BIG_M)
 
         return when {
-            skip(Plus)        -> Stmt.MemoryPush(loc)
+            skip(Symbol.PLUS)    -> Stmt.MemoryPush(loc)
 
-            skip(Minus)       -> Stmt.MemoryPop(loc)
+            skip(Symbol.DASH)    -> Stmt.MemoryPop(loc)
 
-            skip(LessSign)    -> Stmt.MemoryOut(loc, expr())
+            skip(Symbol.LESS)    -> Stmt.MemoryOut(loc, expr())
 
-            skip(GreaterSign) -> Stmt.MemoryIn(loc, expr())
+            skip(Symbol.GREATER) -> Stmt.MemoryIn(loc, expr())
 
-            skip(Exclamation) -> Stmt.MemoryFlush(loc)
+            skip(Symbol.BANG)    -> Stmt.MemoryFlush(loc)
 
-            else              -> invalidStatementHeaderError("M${peek().type}", loc)
+            else                 -> invalidStatementHeaderError("M${peek().type}", loc)
         }
     }
 
@@ -255,7 +283,7 @@ class Parser(private val lexer: Lexer) {
 
         val expr = expr()
 
-        if (expr is Expr.Binary && expr.operator == Assign) {
+        if (expr is Expr.Binary && expr.operator == ASSIGN) {
             return when (val left = expr.left) {
                 is Expr.Single        -> Stmt.SingleAssign(expr.loc, left, expr.right)
 
@@ -286,20 +314,20 @@ class Parser(private val lexer: Lexer) {
         val expr = conditional()
 
         return if (match(
-                EqualSign,
-                StarEqual,
-                SlashEqual,
-                PercentEqual,
-                PlusEqual,
-                MinusEqual,
-                DoubleLessEqual,
-                DoubleGreaterEqual,
-                TripleGreaterEqual,
-                AndEqual,
-                CaretEqual,
-                PipeEqual,
-                DoubleAmpersandEqual,
-                DoublePipeEqual
+                Symbol.EQUAL,
+                Symbol.STAR_EQUAL,
+                Symbol.SLASH_EQUAL,
+                Symbol.PERCENT_EQUAL,
+                Symbol.PLUS_EQUAL,
+                Symbol.DASH_EQUAL,
+                Symbol.DOUBLE_LESS_EQUAL,
+                Symbol.DOUBLE_GREATER_EQUAL,
+                Symbol.TRIPLE_GREATER_EQUAL,
+                Symbol.AMPERSAND_EQUAL,
+                Symbol.CARET_EQUAL,
+                Symbol.PIPE_EQUAL,
+                Symbol.DOUBLE_AMPERSAND_EQUAL,
+                Symbol.DOUBLE_PIPE_EQUAL
             )
         ) {
             val op = peek()
@@ -307,33 +335,33 @@ class Parser(private val lexer: Lexer) {
             mustSkip(op.type)
 
             when (op.type) {
-                StarEqual            -> compoundAssign(op.loc, expr, Multiply)
+                Symbol.STAR_EQUAL             -> compoundAssign(op.loc, expr, MULTIPLY)
 
-                SlashEqual           -> compoundAssign(op.loc, expr, Divide)
+                Symbol.SLASH_EQUAL            -> compoundAssign(op.loc, expr, DIVIDE)
 
-                PercentEqual         -> compoundAssign(op.loc, expr, Modulus)
+                Symbol.PERCENT_EQUAL          -> compoundAssign(op.loc, expr, MODULUS)
 
-                PlusEqual            -> compoundAssign(op.loc, expr, Add)
+                Symbol.PLUS_EQUAL             -> compoundAssign(op.loc, expr, ADD)
 
-                MinusEqual           -> compoundAssign(op.loc, expr, Subtract)
+                Symbol.DASH_EQUAL             -> compoundAssign(op.loc, expr, SUBTRACT)
 
-                DoubleLessEqual      -> compoundAssign(op.loc, expr, ShiftLeft)
+                Symbol.DOUBLE_LESS_EQUAL      -> compoundAssign(op.loc, expr, SHIFT_LEFT)
 
-                DoubleGreaterEqual   -> compoundAssign(op.loc, expr, ShiftRight)
+                Symbol.DOUBLE_GREATER_EQUAL   -> compoundAssign(op.loc, expr, SHIFT_RIGHT)
 
-                TripleGreaterEqual   -> compoundAssign(op.loc, expr, UnsignedShiftRight)
+                Symbol.TRIPLE_GREATER_EQUAL   -> compoundAssign(op.loc, expr, UNSIGNED_SHIFT_RIGHT)
 
-                AndEqual             -> compoundAssign(op.loc, expr, BitAnd)
+                Symbol.AMPERSAND_EQUAL        -> compoundAssign(op.loc, expr, BIT_AND)
 
-                CaretEqual           -> compoundAssign(op.loc, expr, Xor)
+                Symbol.CARET_EQUAL            -> compoundAssign(op.loc, expr, BIT_XOR)
 
-                PipeEqual            -> compoundAssign(op.loc, expr, BitOr)
+                Symbol.PIPE_EQUAL             -> compoundAssign(op.loc, expr, BIT_OR)
 
-                DoubleAmpersandEqual -> compoundAssign(op.loc, expr, And)
+                Symbol.DOUBLE_AMPERSAND_EQUAL -> compoundAssign(op.loc, expr, AND)
 
-                DoublePipeEqual      -> compoundAssign(op.loc, expr, Or)
+                Symbol.DOUBLE_PIPE_EQUAL      -> compoundAssign(op.loc, expr, OR)
 
-                else                 -> Expr.Binary(op.loc, Assign, expr, assign())
+                else                          -> Expr.Binary(op.loc, ASSIGN, expr, assign())
             }
         }
         else {
@@ -347,7 +375,7 @@ class Parser(private val lexer: Lexer) {
      * @return one desugared compound assignment operator
      */
     private fun compoundAssign(loc: Location, expr: Expr, operator: Expr.Binary.Operator) =
-        Expr.Binary(loc, Assign, expr, Expr.Binary(loc, operator, expr, assign()))
+        Expr.Binary(loc, ASSIGN, expr, Expr.Binary(loc, operator, expr, assign()))
 
     /**
      * Gets a single [expression][Expr] with a possible ternary operator.
@@ -357,14 +385,14 @@ class Parser(private val lexer: Lexer) {
     private fun conditional(): Expr {
         var node = logicalOr()
 
-        if (match(Question)) {
+        if (match(Symbol.QUESTION)) {
             val op = peek()
 
             mustSkip(op.type)
 
             val yes = conditional()
 
-            mustSkip(Colon)
+            mustSkip(Symbol.COLON)
 
             val no = conditional()
 
@@ -382,12 +410,12 @@ class Parser(private val lexer: Lexer) {
     private fun logicalOr(): Expr {
         var node = logicalAnd()
 
-        while (match(DoublePipe)) {
+        while (match(Symbol.DOUBLE_PIPE)) {
             val op = peek()
 
-            mustSkip(op.type)
+            val symbol = mustGet<Symbol>()
 
-            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type], node, logicalAnd())
+            node = Expr.Binary(op.loc, Expr.Binary.Operator[symbol], node, logicalAnd())
         }
 
         return node
@@ -401,12 +429,12 @@ class Parser(private val lexer: Lexer) {
     private fun logicalAnd(): Expr {
         var node = bitwiseOr()
 
-        while (match(DoubleAmpersand)) {
+        while (match(Symbol.DOUBLE_AMPERSAND)) {
             val op = peek()
 
-            mustSkip(op.type)
+            val symbol = mustGet<Symbol>()
 
-            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type], node, bitwiseOr())
+            node = Expr.Binary(op.loc, Expr.Binary.Operator[symbol], node, bitwiseOr())
         }
 
         return node
@@ -420,12 +448,12 @@ class Parser(private val lexer: Lexer) {
     private fun bitwiseOr(): Expr {
         var node = bitwiseXor()
 
-        while (match(Pipe)) {
+        while (match(Symbol.PIPE)) {
             val op = peek()
 
-            mustSkip(op.type)
+            val symbol = mustGet<Symbol>()
 
-            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type], node, bitwiseXor())
+            node = Expr.Binary(op.loc, Expr.Binary.Operator[symbol], node, bitwiseXor())
         }
 
         return node
@@ -439,12 +467,12 @@ class Parser(private val lexer: Lexer) {
     private fun bitwiseXor(): Expr {
         var node = bitwiseAnd()
 
-        while (match(Caret)) {
+        while (match(Symbol.CARET)) {
             val op = peek()
 
-            mustSkip(op.type)
+            val symbol = mustGet<Symbol>()
 
-            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type], node, bitwiseAnd())
+            node = Expr.Binary(op.loc, Expr.Binary.Operator[symbol], node, bitwiseAnd())
         }
 
         return node
@@ -458,12 +486,12 @@ class Parser(private val lexer: Lexer) {
     private fun bitwiseAnd(): Expr {
         var node = equality()
 
-        while (match(Ampersand)) {
+        while (match(Symbol.AMPERSAND)) {
             val op = peek()
 
-            mustSkip(op.type)
+            val symbol = mustGet<Symbol>()
 
-            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type], node, equality())
+            node = Expr.Binary(op.loc, Expr.Binary.Operator[symbol], node, equality())
         }
 
         return node
@@ -477,12 +505,12 @@ class Parser(private val lexer: Lexer) {
     private fun equality(): Expr {
         var node = relational()
 
-        while (match(DoubleEqual, LessGreater)) {
+        while (match(Symbol.DOUBLE_EQUAL, Symbol.LESS_GREATER)) {
             val op = peek()
 
-            mustSkip(op.type)
+            val symbol = mustGet<Symbol>()
 
-            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type], node, relational())
+            node = Expr.Binary(op.loc, Expr.Binary.Operator[symbol], node, relational())
         }
 
         return node
@@ -496,12 +524,12 @@ class Parser(private val lexer: Lexer) {
     private fun relational(): Expr {
         var node = shift()
 
-        while (match(LessSign, LessEqualSign, GreaterSign, GreaterEqualSign)) {
+        while (match(Symbol.LESS, Symbol.LESS_EQUAL, Symbol.GREATER, Symbol.GREATER_EQUAL)) {
             val op = peek()
 
-            mustSkip(op.type)
+            val symbol = mustGet<Symbol>()
 
-            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type], node, shift())
+            node = Expr.Binary(op.loc, Expr.Binary.Operator[symbol], node, shift())
         }
 
         return node
@@ -515,12 +543,12 @@ class Parser(private val lexer: Lexer) {
     private fun shift(): Expr {
         var node = additive()
 
-        while (match(DoubleLess, DoubleGreater, TripleGreater)) {
+        while (match(Symbol.DOUBLE_LESS, Symbol.DOUBLE_GREATER, Symbol.TRIPLE_GREATER)) {
             val op = peek()
 
-            mustSkip(op.type)
+            val symbol = mustGet<Symbol>()
 
-            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type], node, additive())
+            node = Expr.Binary(op.loc, Expr.Binary.Operator[symbol], node, additive())
         }
 
         return node
@@ -534,12 +562,12 @@ class Parser(private val lexer: Lexer) {
     private fun additive(): Expr {
         var node = multiplicative()
 
-        while (match(Plus, Minus)) {
+        while (match(Symbol.PLUS, Symbol.DASH)) {
             val op = peek()
 
-            mustSkip(op.type)
+            val symbol = mustGet<Symbol>()
 
-            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type], node, multiplicative())
+            node = Expr.Binary(op.loc, Expr.Binary.Operator[symbol], node, multiplicative())
         }
 
         return node
@@ -553,12 +581,12 @@ class Parser(private val lexer: Lexer) {
     private fun multiplicative(): Expr {
         var node = prefix()
 
-        while (match(Star, Slash, Percent)) {
+        while (match(Symbol.STAR, Symbol.SLASH, Symbol.PERCENT)) {
             val op = peek()
 
-            mustSkip(op.type)
+            val symbol = mustGet<Symbol>()
 
-            node = Expr.Binary(op.loc, Expr.Binary.Operator[op.type], node, prefix())
+            node = Expr.Binary(op.loc, Expr.Binary.Operator[symbol], node, prefix())
         }
 
         return node
@@ -571,22 +599,22 @@ class Parser(private val lexer: Lexer) {
      */
     private fun prefix(): Expr {
         return if (match(
-                Minus,
-                Exclamation,
-                Question,
-                Tilde,
-                DoublePlus,
-                DoubleMinus,
-                DoubleQuestion,
-                DoubleExclamation,
-                DoubleTilde
+                Symbol.DASH,
+                Symbol.BANG,
+                Symbol.QUESTION,
+                Symbol.TILDE,
+                Symbol.DOUBLE_PLUS,
+                Symbol.DOUBLE_DASH,
+                Symbol.DOUBLE_QUESTION,
+                Symbol.DOUBLE_BANG,
+                Symbol.DOUBLE_TILDE
             )
         ) {
             val op = peek()
 
-            skip(op.type)
+            val symbol = mustGet<Symbol>()
 
-            Expr.Prefix(op.loc, Expr.Prefix.Operator[op.type], prefix())
+            Expr.Prefix(op.loc, Expr.Prefix.Operator[symbol], prefix())
         }
         else {
             postfix()
@@ -601,12 +629,22 @@ class Parser(private val lexer: Lexer) {
     private fun postfix(): Expr {
         var expr = terminal()
 
-        while (match(DoublePlus, DoubleMinus, DoubleQuestion, DoubleExclamation, DoubleTilde, SmallI, SmallF, SmallS)) {
+        while (match(
+                Symbol.DOUBLE_PLUS,
+                Symbol.DOUBLE_DASH,
+                Symbol.DOUBLE_QUESTION,
+                Symbol.DOUBLE_BANG,
+                Symbol.DOUBLE_TILDE,
+                Symbol.SMALL_I,
+                Symbol.SMALL_F,
+                Symbol.SMALL_S
+            )
+        ) {
             val op = peek()
 
-            skip(op.type)
+            val symbol = mustGet<Symbol>()
 
-            expr = Expr.Postfix(op.loc, Expr.Postfix.Operator[op.type], expr)
+            expr = Expr.Postfix(op.loc, Expr.Postfix.Operator[symbol], expr)
         }
 
         return expr
@@ -617,31 +655,31 @@ class Parser(private val lexer: Lexer) {
      */
     private fun terminal(): Expr {
         return when {
-            match(Value)      -> value()
+            match(Symbol.LEFT_PAREN)  -> nested()
 
-            match(LeftParen)  -> nested()
+            match(Symbol.LEFT_SQUARE) -> access()
 
-            match(LeftSquare) -> access()
+            match(Symbol.LEFT_BRACE)  -> array()
 
-            match(LeftBrace)  -> array()
+            match(Value::class)       -> value()
 
-            match(Dynamic)    -> dynamic()
+            match(Dynamic::class)     -> dynamic()
 
-            else              -> invalidTerminalError(peek().type, here())
+            else                      -> invalidTerminalError(peek().type, here())
         }
     }
 
     /**
-     * Gets a single [numberFormatError expression][Number] with the [value][Token.value] of the [current token][peek].
+     * Gets a single [numberFormatError expression][Number] with the [value][Value.value] of the [current token][peek].
      *
      * @return one [number expression][Number]
      */
     private fun value(): Expr.Number {
         val token = peek()
 
-        mustSkip(Value)
+        val value = mustGet<Value>().value
 
-        return Expr.Number(token.loc, token.value)
+        return Expr.Number(token.loc, value)
     }
 
     /**
@@ -650,11 +688,11 @@ class Parser(private val lexer: Lexer) {
      * @return one [Expr]
      */
     private fun nested(): Expr {
-        mustSkip(LeftParen)
+        mustSkip(Symbol.LEFT_PAREN)
 
         val expr = expr()
 
-        mustSkip(RightParen)
+        mustSkip(Symbol.RIGHT_PAREN)
 
         return expr
     }
@@ -667,30 +705,30 @@ class Parser(private val lexer: Lexer) {
     private fun access(): Expr {
         val loc = here()
 
-        mustSkip(LeftSquare)
+        mustSkip(Symbol.LEFT_SQUARE)
 
         // []
-        if (skip(RightSquare)) {
+        if (skip(Symbol.RIGHT_SQUARE)) {
             return Expr.FixedRange(loc, Expr.None, Expr.None, Expr.None)
         }
 
-        val a = if (match(Colon, At, RightSquare))
+        val a = if (match(Symbol.COLON, Symbol.AT, Symbol.RIGHT_SQUARE))
             Expr.None
         else
             expr()
 
         // [a]
-        if (skip(RightSquare)) {
+        if (skip(Symbol.RIGHT_SQUARE)) {
             return Expr.Single(loc, a)
         }
 
-        val fixed = skip(Colon)
+        val fixed = skip(Symbol.COLON)
 
         if (!fixed) {
-            mustSkip(At)
+            mustSkip(Symbol.AT)
         }
 
-        if (skip(RightSquare)) {
+        if (skip(Symbol.RIGHT_SQUARE)) {
             return if (fixed) {
                 // [a :]
                 Expr.FixedRange(loc, a, Expr.None, Expr.None)
@@ -700,12 +738,12 @@ class Parser(private val lexer: Lexer) {
             }
         }
 
-        val b = if (match(Colon, RightSquare))
+        val b = if (match(Symbol.COLON, Symbol.RIGHT_SQUARE))
             Expr.None
         else
             expr()
 
-        if (skip(RightSquare)) {
+        if (skip(Symbol.RIGHT_SQUARE)) {
             return if (fixed) {
                 // [a : b]
                 Expr.FixedRange(loc, a, b, Expr.None)
@@ -716,14 +754,14 @@ class Parser(private val lexer: Lexer) {
             }
         }
 
-        mustSkip(Colon)
+        mustSkip(Symbol.COLON)
 
-        val c = if (match(RightSquare))
+        val c = if (match(Symbol.RIGHT_SQUARE))
             Expr.None
         else
             expr()
 
-        mustSkip(RightSquare)
+        mustSkip(Symbol.RIGHT_SQUARE)
 
         return if (fixed) {
             // [a : b : c]
@@ -743,7 +781,7 @@ class Parser(private val lexer: Lexer) {
     private fun array(): Expr.Array {
         val token = peek()
 
-        mustSkip(LeftBrace)
+        mustSkip(Symbol.LEFT_BRACE)
 
         val elements = mutableListOf<Expr>()
 
@@ -756,9 +794,9 @@ class Parser(private val lexer: Lexer) {
 
             elements += element
         }
-        while (skip(Comma))
+        while (skip(Symbol.COMMA))
 
-        mustSkip(RightBrace)
+        mustSkip(Symbol.RIGHT_BRACE)
 
         return Expr.Array(token.loc, elements)
     }
@@ -771,9 +809,9 @@ class Parser(private val lexer: Lexer) {
     private fun dynamic(): Expr.DynamicLiteral {
         val token = peek()
 
-        mustSkip(Dynamic)
+        val char = mustGet<Dynamic>().char
 
-        val name = Expr.DynamicLiteral.Name[token.value.toInt().toChar()]!!
+        val name = Expr.DynamicLiteral.Name[char]!!
 
         return Expr.DynamicLiteral(token.loc, name)
     }
